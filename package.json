@@ -3,9 +3,8 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "backend",
-    "sdk",
-    "example"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "./dev.sh",

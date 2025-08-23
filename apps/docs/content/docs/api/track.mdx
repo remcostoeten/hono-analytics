@@ -1,0 +1,236 @@
+---
+title: POST /track
+description: Record analytics events
+---
+
+# POST /track
+
+Records analytics events including pageviews, user data, and session information.
+
+## Request
+
+```
+POST /track
+```
+
+### Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `x-api-key` | Yes | Your project API key |
+| `x-dev-traffic` | No | Set to `"true"` to mark as development traffic |
+| `Content-Type` | Yes | Must be `application/json` |
+
+### Request Body
+
+```json
+{
+  "user": {
+    "id": "user-uuid",
+    "device": "desktop",
+    "browser": "Chrome 120",
+    "os": "macOS 14",
+    "country": "Netherlands",
+    "city": "Amsterdam",
+    "lat": 52.3676,
+    "lng": 4.9041
+  },
+  "session": {
+    "id": "session-uuid",
+    "referrer": "https://google.com",
+    "origin": "google"
+  },
+  "pageview": {
+    "url": "https://example.com/page",
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "durationMs": 5000
+  }
+}
+```
+
+### Schema
+
+#### User Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | No | Unique user identifier |
+| `device` | string | No | Device type (desktop, mobile, tablet) |
+| `browser` | string | No | Browser name and version |
+| `os` | string | No | Operating system |
+| `country` | string | No | User's country |
+| `city` | string | No | User's city |
+| `lat` | number | No | Latitude coordinate |
+| `lng` | number | No | Longitude coordinate |
+
+#### Session Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | No | Unique session identifier |
+| `referrer` | string | No | HTTP referrer URL |
+| `origin` | string | No | Traffic origin (parsed from referrer) |
+
+#### Pageview Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | string | Yes | Page URL being tracked |
+| `timestamp` | string | No | ISO timestamp (defaults to server time) |
+| `durationMs` | number | No | Time spent on page in milliseconds |
+
+## Response
+
+### Success (204 No Content)
+
+```
+Status: 204 No Content
+```
+
+No response body is returned on successful tracking.
+
+### Error Responses
+
+#### 401 Unauthorized
+
+```json
+{
+  "error": "API key required"
+}
+```
+
+```json
+{
+  "error": "Invalid API key"
+}
+```
+
+#### 400 Bad Request
+
+```json
+{
+  "error": "Invalid request body"
+}
+```
+
+#### 500 Internal Server Error
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+## Examples
+
+### Basic Pageview Tracking
+
+```bash
+curl -X POST "http://localhost:8000/track" \
+  -H "x-api-key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": {},
+    "session": {},
+    "pageview": {
+      "url": "https://example.com/"
+    }
+  }'
+```
+
+### Complete Event with User Data
+
+```bash
+curl -X POST "http://localhost:8000/track" \
+  -H "x-api-key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": {
+      "id": "user-123",
+      "device": "desktop",
+      "browser": "Chrome 120",
+      "country": "Netherlands"
+    },
+    "session": {
+      "id": "session-456",
+      "referrer": "https://google.com/search?q=analytics"
+    },
+    "pageview": {
+      "url": "https://example.com/features",
+      "durationMs": 15000
+    }
+  }'
+```
+
+### Development Traffic
+
+Mark traffic as development to exclude it from production metrics:
+
+```bash
+curl -X POST "http://localhost:8000/track" \
+  -H "x-api-key: your-api-key" \
+  -H "x-dev-traffic: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": {},
+    "session": {},
+    "pageview": {
+      "url": "http://localhost:3000/"
+    }
+  }'
+```
+
+## Behavior
+
+### User Creation and Updates
+
+- If `user.id` is provided and exists, user data is updated
+- If `user.id` is not provided or doesn't exist, a new user is created
+- Device, browser, and OS information is automatically parsed from User-Agent header
+- Geographic data is preserved from first tracking event
+
+### Session Management
+
+- Sessions are tied to specific users
+- If `session.id` is provided and exists for the user, it's reused
+- If `session.id` is not provided or doesn't exist, a new session is created
+- Sessions automatically expire after 30 minutes of inactivity
+
+### Pageview Recording
+
+- Each API call creates a new pageview record
+- Pageviews are linked to sessions
+- Duration tracking helps measure user engagement
+
+## SDK Usage
+
+## Interactive API Testing
+
+import { ApiVisualizer } from '@/components/interactive'
+
+<ApiVisualizer endpoint="http://localhost:8000" apiKey="demo-key" />
+
+## SDK Usage
+
+Instead of calling this API directly, use the SDK which handles all the complexity:
+
+```typescript path=null start=null
+import { useAnalytics } from '@hono-analytics/sdk/react'
+
+function MyComponent() {
+  const analytics = useAnalytics()
+  
+  async function handleEvent() {
+    await analytics.track({
+      url: '/custom-action',
+      durationMs: 1000
+    })
+  }
+  
+  return (
+    <button onClick={handleEvent}>
+      Track Custom Event
+    </button>
+  )
+}
+```

@@ -33,7 +33,7 @@ start_postgres() {
 # Function to setup database
 setup_database() {
   echo "🗄️  Setting up database..."
-  cd backend
+  cd packages/backend
   
   if ! pnpm db:generate; then
     echo "❌ Failed to generate migrations"
@@ -51,22 +51,29 @@ setup_database() {
 # Function to start backend
 start_backend() {
   echo "⚡ Starting backend..."
-  pnpm --filter backend dev &
+  pnpm --filter @hono-analytics/backend dev &
   BACKEND_PID=$!
 }
 
 # Function to start SDK build watch
 start_sdk() {
   echo "📦 Starting SDK build watch..."
-  pnpm --filter sdk dev &
+  pnpm --filter @hono-analytics/sdk dev &
   SDK_PID=$!
 }
 
 # Function to start example app
 start_example() {
   echo "⚛️  Starting example app..."
-  pnpm --filter example dev &
+  pnpm --filter @hono-analytics/example dev &
   EXAMPLE_PID=$!
+}
+
+# Function to start docs app
+start_docs() {
+  echo "📚 Starting docs app..."
+  pnpm --filter @hono-analytics/docs dev &
+  DOCS_PID=$!
 }
 
 # Function to cleanup processes

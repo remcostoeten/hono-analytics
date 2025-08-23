@@ -1,0 +1,68 @@
+---
+title: HONO Analytics Documentation
+description: A self-hosted analytics solution built with HONO, TypeScript, and modern web technologies
+---
+
+# HONO Analytics
+
+A self-hosted analytics solution built with HONO, TypeScript, and modern web technologies. Designed to be privacy-focused, lightweight, and developer-friendly.
+
+## Features
+
+- ✅ **User-centric analytics** (not event-centric)
+- ✅ **Session tracking** with 30-min inactivity timeout
+- ✅ **Developer traffic filtering** with automatic localhost detection
+- ✅ **Geographic data collection** with country/city tracking
+- ✅ **Device, browser, and OS detection** using user agent parsing
+- ✅ **UTM parameter tracking** for campaign attribution
+- ✅ **React provider + vanilla JS support** for all frameworks
+- ✅ **Privacy-focused** with user consent and data control
+- ✅ **Self-hosted** - your data stays on your servers
+- ✅ **TypeScript-first** with full type safety
+
+## Quick Navigation
+
+<Cards>
+  <Card title="Getting Started" href="/docs/getting-started" description="Set up HONO Analytics in minutes" />
+  <Card title="SDK Documentation" href="/docs/sdk" description="Integrate analytics into your applications" />
+  <Card title="API Reference" href="/docs/api" description="Complete API documentation" />
+  <Card title="Configuration" href="/docs/configuration" description="Environment variables and settings" />
+</Cards>
+
+## Architecture
+
+This is a monorepo containing:
+
+- **packages/backend/**: HONO-based API server with Postgres/SQLite support
+- **packages/sdk/**: TypeScript client SDK for web applications  
+- **apps/example/**: Sample React app demonstrating SDK usage
+- **apps/docs/**: This documentation site
+
+## Quick Start
+
+```bash
+# Clone and install
+git clone https://github.com/your-org/hono-analytics.git
+cd hono-analytics
+pnpm install
+
+# Start development environment (requires Docker for PostgreSQL)
+./dev.sh
+
+# Or use SQLite fallback
+DATABASE_URL="sqlite:./packages/backend/analytics.db" ./dev.sh
+```
+
+This will start:
+- Backend API server on http://localhost:8000
+- Example React app on http://localhost:3000
+- PostgreSQL database (or SQLite if Docker unavailable)
+
+## Next Steps
+
+<Cards>
+  <Card title="Installation Guide" href="/docs/getting-started" />
+  <Card title="React Integration" href="/docs/sdk/react" />
+  <Card title="Deployment" href="/docs/deployment" />
+  <Card title="Examples" href="/docs/examples" />
+</Cards>

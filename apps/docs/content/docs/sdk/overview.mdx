@@ -1,0 +1,254 @@
+---
+title: SDK Overview
+description: HONO Analytics JavaScript/TypeScript SDK
+---
+
+# SDK Overview
+
+The HONO Analytics SDK provides easy-to-use analytics tracking for JavaScript and TypeScript applications. It supports both React/Next.js applications and vanilla JavaScript implementations.
+
+## Installation
+
+Install the SDK using your preferred package manager:
+
+```bash
+npm install @hono-analytics/sdk
+# or
+pnpm add @hono-analytics/sdk  
+# or
+yarn add @hono-analytics/sdk
+```
+
+## Quick Start
+
+<Cards>
+  <Card title="React Integration" href="/docs/sdk/react" description="Provider-based analytics for React apps" />
+  <Card title="Vanilla JavaScript" href="/docs/sdk/vanilla" description="Direct integration for any JavaScript app" />
+</Cards>
+
+## Features
+
+- ✅ **Automatic pageview tracking** on route changes
+- ✅ **Session management** with automatic session renewal
+- ✅ **User identification** for logged-in users
+- ✅ **Custom event tracking** with flexible data
+- ✅ **Development traffic filtering** automatically excludes localhost
+- ✅ **TypeScript support** with full type safety
+- ✅ **Privacy-focused** with user consent controls
+- ✅ **Lightweight** minimal impact on bundle size
+
+## Core Concepts
+
+### Analytics Instance
+
+The SDK creates an analytics instance that manages:
+- User sessions and identification
+- Event queuing and transmission
+- Device and browser detection
+- UTM parameter tracking
+
+### Automatic Tracking
+
+When initialized, the SDK automatically:
+- Tracks the initial pageview
+- Detects device, browser, and OS information
+- Starts a user session
+- Generates unique user and session IDs
+
+### Manual Tracking
+
+You can also manually track:
+- Custom events with `track()`
+- User identification with `identify()`
+- Specific pageviews with custom data
+
+## Configuration Options
+
+The SDK accepts these configuration options:
+
+```typescript path=null start=null
+type TAnalyticsOptions = {
+  apiKey: string              // Your project API key
+  projectId: string           // Your project identifier
+  endpoint?: string           // API endpoint URL (default: http://localhost:8000)
+  ignoreAnalytics?: boolean   // Disable all tracking
+  debug?: boolean             // Enable debug logging
+}
+```
+
+### Configuration Details
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `apiKey` | string | Yes | - | Your project API key from the backend |
+| `projectId` | string | Yes | - | Unique project identifier |
+| `endpoint` | string | No | `http://localhost:8000` | Backend API URL |
+| `ignoreAnalytics` | boolean | No | `false` | Completely disable tracking |
+| `debug` | boolean | No | `false` | Log debug information to console |
+
+## API Reference
+
+### Core Methods
+
+All SDK implementations provide these core methods:
+
+#### `track(data?: Partial<TPageviewData>): Promise<void>`
+
+Track a custom event or pageview:
+
+```typescript path=null start=null
+await track({
+  url: '/button-clicked',
+  durationMs: 500
+})
+```
+
+#### `identify(userData: Partial<TUserData>): void`
+
+Identify the current user:
+
+```typescript path=null start=null
+identify({
+  id: 'user-123',
+  country: 'Netherlands',
+  city: 'Amsterdam'
+})
+```
+
+#### `getSessionId(): string | null`
+
+Get the current session ID:
+
+```typescript path=null start=null
+const sessionId = getSessionId()
+console.log('Session:', sessionId)
+```
+
+#### `getUserId(): string | null`
+
+Get the current user ID:
+
+```typescript path=null start=null
+const userId = getUserId()
+console.log('User:', userId)
+```
+
+### Data Types
+
+#### TUserData
+
+```typescript path=null start=null
+type TUserData = {
+  id?: string
+  device?: string
+  browser?: string
+  os?: string
+  country?: string
+  city?: string
+  lat?: number
+  lng?: number
+}
+```
+
+#### TPageviewData
+
+```typescript path=null start=null
+type TPageviewData = {
+  url: string
+  timestamp?: string
+  durationMs?: number
+}
+```
+
+## Framework Support
+
+<Cards>
+  <Card title="React & Next.js" href="/docs/sdk/react" description="Context provider with hooks" />
+  <Card title="Vue.js" href="#" description="Coming soon" />
+  <Card title="Svelte" href="#" description="Coming soon" />
+  <Card title="Vanilla JS" href="/docs/sdk/vanilla" description="Works with any framework" />
+</Cards>
+
+## Examples
+
+### Basic Usage
+
+```javascript path=null start=null
+import { initAnalytics, track, identify } from '@hono-analytics/sdk'
+
+// Initialize
+const analytics = initAnalytics({
+  apiKey: 'your-api-key',
+  projectId: 'your-project-id',
+  endpoint: 'https://analytics.example.com'
+})
+
+// Track custom events
+await track({ url: '/purchase-completed' })
+
+// Identify users
+identify({ id: 'user-123', country: 'Germany' })
+```
+
+### React Usage
+
+```tsx path=null start=null
+import { AnalyticsProvider, useAnalytics } from '@hono-analytics/sdk/react'
+
+type TProps = {
+  children: React.ReactNode
+}
+
+export function App({ children }: TProps) {
+  return (
+    <AnalyticsProvider
+      apiKey="your-api-key"
+      projectId="your-project-id"
+      endpoint="https://analytics.example.com"
+    >
+      {children}
+    </AnalyticsProvider>
+  )
+}
+
+function TrackingComponent() {
+  const analytics = useAnalytics()
+  
+  async function handleClick() {
+    await analytics.track({ url: '/button-click' })
+  }
+  
+  return <button onClick={handleClick}>Click me</button>
+}
+```
+
+## Development vs Production
+
+The SDK automatically detects development environments and:
+- Excludes localhost traffic by default
+- Enables debug logging in development
+- Provides detailed error messages
+
+For production deployments:
+- Set `endpoint` to your production API URL
+- Ensure `debug: false` (default)
+- Configure proper API keys
+
+## Next Steps
+
+## Interactive Code Generator
+
+import { CodeGenerator } from '@/components/interactive'
+
+<CodeGenerator />
+
+## Next Steps
+
+Choose your integration approach:
+
+<Cards>
+  <Card title="React Integration" href="/docs/sdk/react" description="Complete React/Next.js setup guide" />
+  <Card title="Vanilla JavaScript" href="/docs/sdk/vanilla" description="Direct integration without frameworks" />
+  <Card title="Examples" href="/docs/examples" description="Common usage patterns and examples" />
+  <Card title="API Reference" href="/docs/api" description="Backend API documentation" />
+</Cards>

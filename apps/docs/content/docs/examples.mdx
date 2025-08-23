@@ -1,0 +1,750 @@
+---
+title: Examples
+description: Common usage patterns and integration examples
+---
+
+# Examples
+
+This page provides practical examples of integrating HONO Analytics into your applications with common patterns and use cases.
+
+## Basic Integration Examples
+
+### React E-commerce Site
+
+```tsx path=null start=null
+import { AnalyticsProvider, useAnalytics } from '@hono-analytics/sdk/react'
+import { useAuth } from './hooks/useAuth'
+import { useEffect } from 'react'
+
+type TProps = {
+  children: React.ReactNode
+}
+
+export function App({ children }: TProps) {
+  return (
+    <AnalyticsProvider
+      apiKey={process.env.NEXT_PUBLIC_ANALYTICS_API_KEY!}
+      projectId={process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID!}
+      endpoint={process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT}
+    >
+      <AuthTracker />
+      {children}
+    </AnalyticsProvider>
+  )
+}
+
+function AuthTracker() {
+  const analytics = useAnalytics()
+  const { user, isLoading } = useAuth()
+  
+  useEffect(() => {
+    if (!isLoading && user) {
+      analytics.identify({
+        id: user.id,
+        country: user.country,
+        city: user.city
+      })
+    }
+  }, [user, isLoading, analytics])
+  
+  return null
+}
+
+function ProductPage({ productId }: { productId: string }) {
+  const analytics = useAnalytics()
+  
+  useEffect(() => {
+    analytics.track({
+      url: `/product/${productId}`,
+      durationMs: 0
+    })
+  }, [productId, analytics])
+  
+  async function handlePurchase() {
+    await analytics.track({
+      url: `/purchase/${productId}`,
+      durationMs: Date.now() - pageLoadTime
+    })
+  }
+  
+  return (
+    <div>
+      <h1>Product {productId}</h1>
+      <button onClick={handlePurchase}>
+        Buy Now
+      </button>
+    </div>
+  )
+}
+```
+
+### Vue.js Blog Application
+
+```javascript path=null start=null
+import { initAnalytics, track, identify } from '@hono-analytics/sdk'
+
+const analytics = initAnalytics({
+  apiKey: process.env.VUE_APP_ANALYTICS_API_KEY,
+  projectId: process.env.VUE_APP_ANALYTICS_PROJECT_ID,
+  endpoint: process.env.VUE_APP_ANALYTICS_ENDPOINT
+})
+
+export default {
+  name: 'BlogPost',
+  data() {
+    return {
+      startTime: Date.now(),
+      post: null
+    }
+  },
+  
+  async mounted() {
+    await this.loadPost()
+    
+    await track({
+      url: `/blog/${this.$route.params.slug}`,
+      durationMs: 0
+    })
+  },
+  
+  beforeDestroy() {
+    const timeOnPage = Date.now() - this.startTime
+    
+    track({
+      url: `/blog/${this.$route.params.slug}/exit`,
+      durationMs: timeOnPage
+    })
+  },
+  
+  methods: {
+    async loadPost() {
+      this.post = await fetchPost(this.$route.params.slug)
+    },
+    
+    async sharePost() {
+      await track({
+        url: `/blog/${this.$route.params.slug}/share`,
+        durationMs: Date.now() - this.startTime
+      })
+    },
+    
+    async subscribeNewsletter(email) {
+      identify({ id: email })
+      
+      await track({
+        url: '/newsletter/subscribe',
+        durationMs: 0
+      })
+    }
+  }
+}
+```
+
+## Advanced Tracking Patterns
+
+### Custom Event Tracking System
+
+```typescript path=null start=null
+import { track } from '@hono-analytics/sdk'
+
+type TEventData = {
+  category: string
+  action: string
+  label?: string
+  value?: number
+  customData?: Record<string, any>
+}
+
+class EventTracker {
+  private startTimes: Map<string, number> = new Map()
+  
+  async trackEvent(eventData: TEventData): Promise<void> {
+    const url = `/${eventData.category}/${eventData.action}`
+    
+    await track({
+      url,
+      durationMs: eventData.value || 0
+    })
+  }
+  
+  startTiming(eventKey: string): void {
+    this.startTimes.set(eventKey, Date.now())
+  }
+  
+  async endTiming(eventKey: string, category: string, action: string): Promise<void> {
+    const startTime = this.startTimes.get(eventKey)
+    if (!startTime) return
+    
+    const duration = Date.now() - startTime
+    this.startTimes.delete(eventKey)
+    
+    await this.trackEvent({
+      category,
+      action,
+      value: duration
+    })
+  }
+  
+  async trackPageView(path: string): Promise<void> {
+    await track({ url: path })
+  }
+  
+  async trackUserAction(action: string, details?: Record<string, any>): Promise<void> {
+    await this.trackEvent({
+      category: 'user',
+      action,
+      customData: details
+    })
+  }
+}
+
+export const eventTracker = new EventTracker()
+
+function useEventTracker() {
+  return {
+    trackEvent: eventTracker.trackEvent.bind(eventTracker),
+    trackPageView: eventTracker.trackPageView.bind(eventTracker),
+    trackUserAction: eventTracker.trackUserAction.bind(eventTracker),
+    startTiming: eventTracker.startTiming.bind(eventTracker),
+    endTiming: eventTracker.endTiming.bind(eventTracker)
+  }
+}
+```
+
+### Form Tracking
+
+```typescript path=null start=null
+import { useAnalytics } from '@hono-analytics/sdk/react'
+import { useState, useEffect } from 'react'
+
+type TFormField = {
+  name: string
+  value: any
+  required: boolean
+}
+
+function useFormTracking(formName: string, fields: TFormField[]) {
+  const analytics = useAnalytics()
+  const [startTime] = useState(Date.now())
+  const [fieldStartTimes, setFieldStartTimes] = useState<Record<string, number>>({})
+  
+  useEffect(() => {
+    analytics.track({
+      url: `/form/${formName}/start`,
+      durationMs: 0
+    })
+  }, [formName, analytics])
+  
+  async function trackFieldFocus(fieldName: string) {
+    setFieldStartTimes(prev => ({
+      ...prev,
+      [fieldName]: Date.now()
+    }))
+    
+    await analytics.track({
+      url: `/form/${formName}/field/${fieldName}/focus`,
+      durationMs: Date.now() - startTime
+    })
+  }
+  
+  async function trackFieldBlur(fieldName: string) {
+    const fieldStartTime = fieldStartTimes[fieldName]
+    const timeInField = fieldStartTime ? Date.now() - fieldStartTime : 0
+    
+    await analytics.track({
+      url: `/form/${formName}/field/${fieldName}/blur`,
+      durationMs: timeInField
+    })
+  }
+  
+  async function trackFormSubmit(success: boolean, errors?: string[]) {
+    const totalTime = Date.now() - startTime
+    const completionRate = calculateCompletionRate(fields)
+    
+    await analytics.track({
+      url: `/form/${formName}/${success ? 'submit' : 'error'}`,
+      durationMs: totalTime
+    })
+  }
+  
+  function calculateCompletionRate(formFields: TFormField[]): number {
+    const filledFields = formFields.filter(field => 
+      field.value && field.value.toString().trim() !== ''
+    ).length
+    
+    return (filledFields / formFields.length) * 100
+  }
+  
+  return {
+    trackFieldFocus,
+    trackFieldBlur,
+    trackFormSubmit
+  }
+}
+
+function ContactForm() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  })
+  
+  const fields: TFormField[] = [
+    { name: 'name', value: formData.name, required: true },
+    { name: 'email', value: formData.email, required: true },
+    { name: 'message', value: formData.message, required: true }
+  ]
+  
+  const { trackFieldFocus, trackFieldBlur, trackFormSubmit } = useFormTracking('contact', fields)
+  
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    
+    try {
+      await submitForm(formData)
+      await trackFormSubmit(true)
+    } catch (error) {
+      await trackFormSubmit(false, [error.message])
+    }
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Name"
+        value={formData.name}
+        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+        onFocus={() => trackFieldFocus('name')}
+        onBlur={() => trackFieldBlur('name')}
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        value={formData.email}
+        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+        onFocus={() => trackFieldFocus('email')}
+        onBlur={() => trackFieldBlur('email')}
+      />
+      <textarea
+        placeholder="Message"
+        value={formData.message}
+        onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+        onFocus={() => trackFieldFocus('message')}
+        onBlur={() => trackFieldBlur('message')}
+      />
+      <button type="submit">Send Message</button>
+    </form>
+  )
+}
+```
+
+### Performance Tracking
+
+```typescript path=null start=null
+import { track } from '@hono-analytics/sdk'
+
+class PerformanceTracker {
+  private observers: PerformanceObserver[] = []
+  
+  constructor() {
+    this.setupPerformanceTracking()
+  }
+  
+  private setupPerformanceTracking(): void {
+    if (typeof window === 'undefined') return
+    
+    this.trackPageLoad()
+    this.trackLargestContentfulPaint()
+    this.trackFirstInputDelay()
+    this.trackCumulativeLayoutShift()
+  }
+  
+  private trackPageLoad(): void {
+    window.addEventListener('load', () => {
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+      
+      const metrics = {
+        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
+        loadComplete: navigation.loadEventEnd - navigation.loadEventStart,
+        firstPaint: this.getFirstPaint(),
+        firstContentfulPaint: this.getFirstContentfulPaint()
+      }
+      
+      Object.entries(metrics).forEach(async ([metric, value]) => {
+        if (value > 0) {
+          await track({
+            url: `/performance/${metric}`,
+            durationMs: Math.round(value)
+          })
+        }
+      })
+    })
+  }
+  
+  private trackLargestContentfulPaint(): void {
+    if (!('PerformanceObserver' in window)) return
+    
+    const observer = new PerformanceObserver((entryList) => {
+      const entries = entryList.getEntries()
+      const lastEntry = entries[entries.length - 1]
+      
+      track({
+        url: '/performance/largest-contentful-paint',
+        durationMs: Math.round(lastEntry.startTime)
+      })
+    })
+    
+    observer.observe({ entryTypes: ['largest-contentful-paint'] })
+    this.observers.push(observer)
+  }
+  
+  private trackFirstInputDelay(): void {
+    if (!('PerformanceObserver' in window)) return
+    
+    const observer = new PerformanceObserver((entryList) => {
+      const entries = entryList.getEntries()
+      entries.forEach(async (entry) => {
+        const fid = entry.processingStart - entry.startTime
+        await track({
+          url: '/performance/first-input-delay',
+          durationMs: Math.round(fid)
+        })
+      })
+    })
+    
+    observer.observe({ entryTypes: ['first-input'] })
+    this.observers.push(observer)
+  }
+  
+  private trackCumulativeLayoutShift(): void {
+    if (!('PerformanceObserver' in window)) return
+    
+    let clsScore = 0
+    
+    const observer = new PerformanceObserver((entryList) => {
+      const entries = entryList.getEntries()
+      entries.forEach((entry: any) => {
+        if (!entry.hadRecentInput) {
+          clsScore += entry.value
+        }
+      })
+    })
+    
+    observer.observe({ entryTypes: ['layout-shift'] })
+    this.observers.push(observer)
+    
+    window.addEventListener('beforeunload', async () => {
+      await track({
+        url: '/performance/cumulative-layout-shift',
+        durationMs: Math.round(clsScore * 1000)
+      })
+    })
+  }
+  
+  private getFirstPaint(): number {
+    const paintEntries = performance.getEntriesByType('paint')
+    const firstPaint = paintEntries.find(entry => entry.name === 'first-paint')
+    return firstPaint ? firstPaint.startTime : 0
+  }
+  
+  private getFirstContentfulPaint(): number {
+    const paintEntries = performance.getEntriesByType('paint')
+    const fcp = paintEntries.find(entry => entry.name === 'first-contentful-paint')
+    return fcp ? fcp.startTime : 0
+  }
+  
+  destroy(): void {
+    this.observers.forEach(observer => observer.disconnect())
+    this.observers = []
+  }
+}
+
+export const performanceTracker = new PerformanceTracker()
+```
+
+## Error Tracking Integration
+
+```typescript path=null start=null
+import { track } from '@hono-analytics/sdk'
+
+class ErrorTracker {
+  constructor() {
+    this.setupErrorTracking()
+  }
+  
+  private setupErrorTracking(): void {
+    if (typeof window === 'undefined') return
+    
+    window.addEventListener('error', (event) => {
+      this.trackError('javascript', event.error, {
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno
+      })
+    })
+    
+    window.addEventListener('unhandledrejection', (event) => {
+      this.trackError('promise', event.reason)
+    })
+  }
+  
+  async trackError(type: string, error: any, context?: Record<string, any>): Promise<void> {
+    const errorMessage = error?.message || String(error)
+    const stack = error?.stack
+    
+    await track({
+      url: `/error/${type}`,
+      durationMs: 0
+    })
+  }
+  
+  async trackApiError(endpoint: string, statusCode: number, message?: string): Promise<void> {
+    await track({
+      url: `/api-error/${statusCode}`,
+      durationMs: 0
+    })
+  }
+}
+
+export const errorTracker = new ErrorTracker()
+
+async function apiRequest(url: string, options?: RequestInit): Promise<Response> {
+  try {
+    const response = await fetch(url, options)
+    
+    if (!response.ok) {
+      await errorTracker.trackApiError(url, response.status, response.statusText)
+    }
+    
+    return response
+  } catch (error) {
+    await errorTracker.trackApiError(url, 0, 'Network Error')
+    throw error
+  }
+}
+```
+
+## A/B Testing Integration
+
+```typescript path=null start=null
+import { identify, track } from '@hono-analytics/sdk'
+
+type TExperiment = {
+  id: string
+  name: string
+  variants: string[]
+}
+
+class ABTestTracker {
+  private experiments: Map<string, string> = new Map()
+  
+  async assignUserToExperiment(experiment: TExperiment, userId?: string): Promise<string> {
+    let variant = this.experiments.get(experiment.id)
+    
+    if (!variant) {
+      variant = this.selectVariant(experiment.variants, userId || 'anonymous')
+      this.experiments.set(experiment.id, variant)
+      
+      identify({
+        id: userId
+      })
+      
+      await track({
+        url: `/experiment/${experiment.id}/${variant}`,
+        durationMs: 0
+      })
+    }
+    
+    return variant
+  }
+  
+  async trackConversion(experimentId: string, conversionType: string): Promise<void> {
+    const variant = this.experiments.get(experimentId)
+    if (!variant) return
+    
+    await track({
+      url: `/conversion/${experimentId}/${variant}/${conversionType}`,
+      durationMs: 0
+    })
+  }
+  
+  private selectVariant(variants: string[], userId: string): string {
+    const hash = this.hashString(userId + variants.join(''))
+    const index = Math.abs(hash) % variants.length
+    return variants[index]
+  }
+  
+  private hashString(str: string): number {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash
+    }
+    return hash
+  }
+}
+
+export const abTestTracker = new ABTestTracker()
+
+function useABTest(experiment: TExperiment, userId?: string) {
+  const [variant, setVariant] = useState<string>()
+  
+  useEffect(() => {
+    async function assignVariant() {
+      const assignedVariant = await abTestTracker.assignUserToExperiment(experiment, userId)
+      setVariant(assignedVariant)
+    }
+    
+    assignVariant()
+  }, [experiment.id, userId])
+  
+  async function trackConversion(conversionType: string) {
+    await abTestTracker.trackConversion(experiment.id, conversionType)
+  }
+  
+  return { variant, trackConversion }
+}
+
+function ProductPage({ userId }: { userId: string }) {
+  const experiment: TExperiment = {
+    id: 'checkout-button-color',
+    name: 'Checkout Button Color Test',
+    variants: ['blue', 'green', 'red']
+  }
+  
+  const { variant, trackConversion } = useABTest(experiment, userId)
+  
+  async function handlePurchase() {
+    await trackConversion('purchase')
+  }
+  
+  if (!variant) return <div>Loading...</div>
+  
+  return (
+    <div>
+      <h1>Product</h1>
+      <button 
+        className={`btn-${variant}`}
+        onClick={handlePurchase}
+      >
+        Buy Now
+      </button>
+    </div>
+  )
+}
+```
+
+## Real-time Analytics Dashboard
+
+```typescript path=null start=null
+import { useState, useEffect } from 'react'
+
+type TAnalyticsData = {
+  totals: {
+    users: number
+    sessions: number
+    pageviews: number
+    avgDuration: number
+  }
+  breakdowns: {
+    topPages: Array<{ url: string; views: number }>
+    countries: Array<{ country: string; users: number }>
+    devices: Array<{ device: string; users: number }>
+  }
+}
+
+function useAnalyticsData(apiKey: string, endpoint: string) {
+  const [data, setData] = useState<TAnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  async function fetchData() {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch(`${endpoint}/metrics?range=7d`, {
+        headers: {
+          'x-api-key': apiKey
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analytics: ${response.status}`)
+      }
+      
+      const analyticsData = await response.json()
+      setData(analyticsData)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  useEffect(() => {
+    fetchData()
+    
+    const interval = setInterval(fetchData, 60000)
+    return () => clearInterval(interval)
+  }, [apiKey, endpoint])
+  
+  return { data, loading, error, refetch: fetchData }
+}
+
+function AnalyticsDashboard() {
+  const { data, loading, error } = useAnalyticsData(
+    process.env.REACT_APP_ANALYTICS_API_KEY!,
+    process.env.REACT_APP_ANALYTICS_ENDPOINT!
+  )
+  
+  if (loading) return <div>Loading analytics...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!data) return <div>No data available</div>
+  
+  return (
+    <div className="analytics-dashboard">
+      <div className="metrics-overview">
+        <MetricCard title="Total Users" value={data.totals.users} />
+        <MetricCard title="Sessions" value={data.totals.sessions} />
+        <MetricCard title="Pageviews" value={data.totals.pageviews} />
+        <MetricCard title="Avg Duration" value={`${Math.round(data.totals.avgDuration / 1000)}s`} />
+      </div>
+      
+      <div className="breakdown-charts">
+        <TopPagesChart pages={data.breakdowns.topPages} />
+        <CountriesChart countries={data.breakdowns.countries} />
+        <DevicesChart devices={data.breakdowns.devices} />
+      </div>
+    </div>
+  )
+}
+
+function MetricCard({ title, value }: { title: string; value: string | number }) {
+  return (
+    <div className="metric-card">
+      <h3>{title}</h3>
+      <p className="metric-value">{value}</p>
+    </div>
+  )
+}
+```
+
+## Real-time Analytics Dashboard
+
+Here's an interactive dashboard showing what your analytics data might look like. The dashboard automatically adapts to your site's dark theme:
+
+import { AnalyticsDashboard } from '@/components/interactive'
+
+<AnalyticsDashboard endpoint="http://localhost:8000" apiKey="demo-key" />
+
+## Next Steps
+
+<Cards>
+  <Card title="API Reference" href="/docs/api" description="Complete API documentation" />
+  <Card title="SDK Documentation" href="/docs/sdk" description="SDK integration guides" />
+  <Card title="Configuration" href="/docs/configuration" description="Environment variables and settings" />
+  <Card title="Deployment" href="/docs/deployment" description="Production deployment guide" />
+</Cards>

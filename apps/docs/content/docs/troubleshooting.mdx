@@ -1,0 +1,617 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for HONO Analytics
+---
+
+# Troubleshooting
+
+This guide covers common issues you might encounter when setting up or using HONO Analytics and their solutions.
+
+## Installation Issues
+
+### Dependency Installation Fails
+
+**Problem:** `pnpm install` or `npm install` fails with dependency errors.
+
+**Solutions:**
+```bash
+# Clear package manager cache
+pnpm store prune
+npm cache clean --force
+
+# Delete node_modules and lock files
+rm -rf node_modules package-lock.json pnpm-lock.yaml
+pnpm install
+
+# Use --legacy-peer-deps for npm
+npm install --legacy-peer-deps
+```
+
+### Node.js Version Compatibility
+
+**Problem:** Project requires Node.js 18+ but you have an older version.
+
+**Solutions:**
+```bash
+# Check current version
+node --version
+
+# Install Node.js 18+ using nvm
+nvm install 18
+nvm use 18
+
+# Or update via package manager
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+## Backend Issues
+
+### Database Connection Failed
+
+**Problem:** Backend can't connect to the database.
+
+**Check DATABASE_URL:**
+```bash
+# Verify environment variable
+echo $DATABASE_URL
+
+# Test PostgreSQL connection
+psql $DATABASE_URL -c "SELECT 1;"
+
+# For SQLite, check file permissions
+ls -la packages/backend/analytics.db
+```
+
+**Common Solutions:**
+
+1. **PostgreSQL not running:**
+```bash
+# Start PostgreSQL
+sudo systemctl start postgresql
+
+# Or with Docker
+docker-compose up -d postgres
+```
+
+2. **Incorrect connection string:**
+```bash
+# Correct format
+DATABASE_URL=postgresql://username:password@hostname:5432/database
+
+# With SSL
+DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
+```
+
+3. **SQLite permission issues:**
+```bash
+# Make directory writable
+chmod 755 packages/backend/
+chmod 664 packages/backend/analytics.db
+```
+
+### Migration Errors
+
+**Problem:** Database migrations fail to run.
+
+**Solutions:**
+```bash
+# Navigate to backend directory
+cd packages/backend
+
+# Reset migrations (development only)
+pnpm db:reset
+
+# Generate new migrations
+pnpm db:generate
+
+# Run migrations step by step
+pnpm db:migrate
+
+# Check migration status
+psql $DATABASE_URL -c "\dt"
+```
+
+### API Key Authentication Errors
+
+**Problem:** Getting 401 Unauthorized errors.
+
+**Check API key configuration:**
+```bash
+# Verify backend environment variable
+echo $DEFAULT_API_KEY
+
+# Check projects table
+psql $DATABASE_URL -c "SELECT * FROM projects;"
+
+# Verify frontend API key matches
+echo $NEXT_PUBLIC_ANALYTICS_API_KEY
+```
+
+**Solutions:**
+1. **Ensure API key matches:**
+```bash
+# Backend and frontend must use the same key
+# Backend: DEFAULT_API_KEY=your-key
+# Frontend: NEXT_PUBLIC_ANALYTICS_API_KEY=your-key
+```
+
+2. **Seed projects table:**
+```sql
+INSERT INTO projects (name, api_key) VALUES ('Default Project', 'your-api-key');
+```
+
+### Server Won't Start
+
+**Problem:** Backend server fails to start on port 8000.
+
+**Check port availability:**
+```bash
+# Check what's using port 8000
+lsof -i :8000
+netstat -tulpn | grep :8000
+
+# Kill process using the port
+sudo kill -9 $(lsof -ti:8000)
+
+# Or use a different port
+export PORT=8001
+pnpm dev
+```
+
+**Check for TypeScript errors:**
+```bash
+# Build and check for errors
+cd packages/backend
+pnpm build
+
+# Check TypeScript configuration
+npx tsc --noEmit
+```
+
+## Frontend Issues
+
+### CORS Errors
+
+**Problem:** Browser blocks requests with CORS errors.
+
+**Common CORS Error:**
+```
+Access to fetch at 'http://localhost:8000/track' from origin 'http://localhost:3000' 
+has been blocked by CORS policy
+```
+
+**Solutions:**
+
+1. **Check CORS configuration in backend:**
+```typescript path=/packages/backend/src/server.ts start=19
+app.use('*', cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001', 
+    'http://localhost:5173', // Add your frontend URL
+    'https://yourdomain.com'
+  ],
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-dev-traffic'],
+  credentials: true
+}))
+```
+
+2. **Verify both servers are running:**
+```bash
+# Backend should be on :8000
+curl http://localhost:8000/health
+
+# Frontend should be on :3000 (or your port)
+curl http://localhost:3000
+```
+
+3. **Check HTTPS/HTTP protocol consistency:**
+- If frontend is HTTPS, backend must be HTTPS
+- If frontend is HTTP, backend can be HTTP
+
+### SDK Not Tracking Events
+
+**Problem:** Analytics events are not being recorded.
+
+**Debug steps:**
+
+1. **Enable debug mode:**
+```tsx path=null start=null
+<AnalyticsProvider
+  debug={true}
+  // ... other props
+>
+```
+
+2. **Check browser console for errors:**
+- Open Developer Tools → Console
+- Look for analytics-related errors or warnings
+
+3. **Verify network requests:**
+- Open Developer Tools → Network tab
+- Look for POST requests to `/track` endpoint
+- Check request/response status
+
+4. **Test direct API call:**
+```bash
+curl -X POST "http://localhost:8000/track" \
+  -H "x-api-key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": {},
+    "session": {},
+    "pageview": {"url": "/test"}
+  }'
+```
+
+### Environment Variables Not Loading
+
+**Problem:** Environment variables are undefined in the frontend.
+
+**Solutions:**
+
+1. **Check variable naming:**
+```bash
+# Next.js requires NEXT_PUBLIC_ prefix
+NEXT_PUBLIC_ANALYTICS_API_KEY=your-key
+
+# Vite requires VITE_ prefix  
+VITE_ANALYTICS_API_KEY=your-key
+
+# Create React App requires REACT_APP_ prefix
+REACT_APP_ANALYTICS_API_KEY=your-key
+```
+
+2. **Verify .env file location:**
+```bash
+# Next.js: .env.local in project root
+# Vite: .env in project root
+# Check file exists
+ls -la .env*
+```
+
+3. **Restart development server:**
+```bash
+# Environment changes require restart
+pnpm dev
+```
+
+## SDK Integration Issues
+
+### useAnalytics Hook Error
+
+**Problem:** `useAnalytics must be used within an AnalyticsProvider`
+
+**Solution:** Ensure component is wrapped with provider:
+```tsx path=null start=null
+function App() {
+  return (
+    <AnalyticsProvider {...config}>
+      <MyComponent /> {/* This can use useAnalytics */}
+    </AnalyticsProvider>
+  )
+}
+
+// This will fail - not wrapped in provider
+function OutsideComponent() {
+  const analytics = useAnalytics() // ❌ Error
+}
+```
+
+### TypeScript Type Errors
+
+**Problem:** TypeScript compilation fails with type errors.
+
+**Solutions:**
+
+1. **Install type definitions:**
+```bash
+pnpm add -D @types/react @types/node
+```
+
+2. **Check import paths:**
+```typescript path=null start=null
+// Correct imports
+import { AnalyticsProvider, useAnalytics } from '@hono-analytics/sdk/react'
+import { initAnalytics, track } from '@hono-analytics/sdk'
+
+// Incorrect imports
+import { AnalyticsProvider } from '@hono-analytics/sdk' // ❌
+```
+
+3. **Update TypeScript configuration:**
+```json path=/tsconfig.json start=null
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  }
+}
+```
+
+## Performance Issues
+
+### Slow API Response Times
+
+**Problem:** Analytics API responses are slow.
+
+**Diagnostic steps:**
+```bash
+# Check database performance
+psql $DATABASE_URL -c "SELECT count(*) FROM pageviews;"
+
+# Test API directly
+time curl -H "x-api-key: your-key" "http://localhost:8000/metrics"
+
+# Check database indexes
+psql $DATABASE_URL -c "\d pageviews"
+```
+
+**Solutions:**
+
+1. **Add database indexes:**
+```sql
+CREATE INDEX idx_pageviews_timestamp ON pageviews(timestamp);
+CREATE INDEX idx_users_project_id ON users(project_id);
+CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+```
+
+2. **Enable connection pooling:**
+```typescript path=null start=null
+import { Pool } from 'pg'
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 20,
+  idleTimeoutMillis: 30000
+})
+```
+
+3. **Implement caching:**
+```typescript path=null start=null
+const cache = new Map()
+
+async function getCachedMetrics(cacheKey: string) {
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey)
+  }
+  
+  const metrics = await computeMetrics()
+  cache.set(cacheKey, metrics)
+  
+  setTimeout(() => cache.delete(cacheKey), 60000) // 1 minute cache
+  return metrics
+}
+```
+
+### High Memory Usage
+
+**Problem:** Backend process consumes excessive memory.
+
+**Check memory usage:**
+```bash
+# Monitor process
+ps aux | grep node
+
+# Check for memory leaks
+node --inspect packages/backend/dist/server.js
+# Open chrome://inspect in Chrome
+```
+
+**Solutions:**
+
+1. **Fix connection leaks:**
+```typescript path=null start=null
+// Always close database connections
+try {
+  const result = await db.query(sql)
+  return result
+} finally {
+  await db.end() // Close connection
+}
+```
+
+2. **Limit concurrent connections:**
+```typescript path=null start=null
+const pool = new Pool({
+  max: 10, // Limit connections
+  connectionTimeoutMillis: 5000
+})
+```
+
+## Production Issues
+
+### SSL Certificate Errors
+
+**Problem:** HTTPS requests fail with certificate errors.
+
+**Solutions:**
+
+1. **Check certificate validity:**
+```bash
+# Test certificate
+openssl s_client -connect yourdomain.com:443 -servername yourdomain.com
+
+# Renew Let's Encrypt certificate
+sudo certbot renew --dry-run
+sudo certbot renew
+```
+
+2. **Update nginx configuration:**
+```nginx
+ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+```
+
+### High Error Rates
+
+**Problem:** High number of 500 errors in production.
+
+**Check logs:**
+```bash
+# Application logs
+pm2 logs hono-analytics
+docker-compose logs -f analytics
+
+# System logs
+sudo journalctl -u hono-analytics
+
+# Nginx logs
+sudo tail -f /var/log/nginx/error.log
+```
+
+**Common solutions:**
+
+1. **Database connection pool exhaustion:**
+```typescript path=null start=null
+// Monitor active connections
+const activeConnections = await db.query('SELECT count(*) FROM pg_stat_activity')
+console.log('Active DB connections:', activeConnections.rows[0].count)
+```
+
+2. **Memory leaks:**
+```bash
+# Restart application
+pm2 restart hono-analytics
+
+# Monitor memory
+watch -n 1 'free -m'
+```
+
+## Data Issues
+
+### Missing Analytics Data
+
+**Problem:** Analytics data is not appearing in metrics.
+
+**Check data pipeline:**
+
+1. **Verify events are being received:**
+```sql
+-- Check recent pageviews
+SELECT count(*) FROM pageviews WHERE timestamp > NOW() - INTERVAL '1 hour';
+
+-- Check user creation
+SELECT count(*) FROM users WHERE first_seen > NOW() - INTERVAL '1 day';
+```
+
+2. **Check development traffic filtering:**
+```sql
+-- Check if events are marked as dev traffic
+SELECT count(*) FROM users WHERE is_dev = true;
+
+-- Include dev traffic in query
+curl -H "x-api-key: your-key" "http://localhost:8000/metrics?exclude_dev=false"
+```
+
+3. **Verify API key association:**
+```sql
+-- Check project exists for API key
+SELECT p.name, count(u.id) as user_count 
+FROM projects p 
+LEFT JOIN users u ON p.id = u.project_id 
+WHERE p.api_key = 'your-api-key'
+GROUP BY p.name;
+```
+
+### Duplicate Events
+
+**Problem:** Same events being tracked multiple times.
+
+**Solutions:**
+
+1. **Add event deduplication:**
+```typescript path=null start=null
+const recentEvents = new Set()
+
+async function trackEvent(eventData: any) {
+  const eventKey = `${eventData.url}-${Date.now()}`
+  
+  if (recentEvents.has(eventKey)) {
+    return // Skip duplicate
+  }
+  
+  recentEvents.add(eventKey)
+  setTimeout(() => recentEvents.delete(eventKey), 5000)
+  
+  await track(eventData)
+}
+```
+
+2. **Fix React strict mode issues:**
+```tsx path=null start=null
+useEffect(() => {
+  let mounted = true
+  
+  async function trackPageView() {
+    if (mounted) {
+      await analytics.track({ url: window.location.pathname })
+    }
+  }
+  
+  trackPageView()
+  
+  return () => {
+    mounted = false
+  }
+}, []) // Empty dependency array
+```
+
+## Getting Help
+
+### Debug Information
+
+When reporting issues, include:
+
+```bash
+# System information
+node --version
+npm --version
+pnpm --version
+
+# Environment
+echo $NODE_ENV
+echo $DATABASE_URL (remove credentials)
+
+# Application status
+curl http://localhost:8000/health
+
+# Recent logs
+docker-compose logs --tail=50 analytics
+pm2 logs hono-analytics --lines 50
+```
+
+### Log Analysis
+
+Enable detailed logging for debugging:
+
+```typescript path=null start=null
+// In backend server.ts
+app.use('*', async (c, next) => {
+  const start = Date.now()
+  console.log(`→ ${c.req.method} ${c.req.url}`)
+  
+  await next()
+  
+  const duration = Date.now() - start
+  console.log(`← ${c.res.status} ${c.req.method} ${c.req.url} (${duration}ms)`)
+})
+```
+
+### Community Support
+
+- **GitHub Issues**: Report bugs and feature requests
+- **Discussions**: Ask questions and share solutions  
+- **Discord**: Real-time community support
+
+## Next Steps
+
+<Cards>
+  <Card title="Configuration" href="/docs/configuration" description="Environment variables and settings" />
+  <Card title="Deployment" href="/docs/deployment" description="Production deployment guide" />
+  <Card title="Examples" href="/docs/examples" description="Working code examples" />
+  <Card title="API Reference" href="/docs/api" description="Complete API documentation" />
+</Cards>

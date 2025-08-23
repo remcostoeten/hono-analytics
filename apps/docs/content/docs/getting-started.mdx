@@ -1,0 +1,259 @@
+---
+title: Getting Started
+description: Set up HONO Analytics in your project
+---
+
+# Getting Started
+
+Get HONO Analytics up and running in your project in just a few minutes.
+
+<Cards>
+  <Card title="Backend Setup" href="#backend-setup" />
+  <Card title="SDK Integration" href="#sdk-integration" />
+  <Card title="React Example" href="/docs/sdk/react" />
+  <Card title="API Reference" href="/docs/api" />
+</Cards>
+
+## Prerequisites
+
+- Node.js 18+ 
+- pnpm 8+
+- Docker (optional, for PostgreSQL)
+
+## Installation
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/your-org/hono-analytics.git
+cd hono-analytics
+pnpm install
+```
+
+### 2. Environment Setup
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your configuration:
+
+```bash path=/home/remcostoeten/current/hono-analytics/.env start=null
+# Database Configuration
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/analytics"
+# Or for SQLite: DATABASE_URL="sqlite:./packages/backend/analytics.db"
+
+# API Configuration
+DEFAULT_API_KEY="your-development-api-key"
+PORT=8000
+NODE_ENV=development
+
+# Optional
+LOG_LEVEL=info
+```
+
+### 3. Backend Setup
+
+Choose your database option:
+
+#### Option A: PostgreSQL (Recommended)
+
+Start PostgreSQL with Docker:
+
+```bash
+docker-compose up -d postgres
+```
+
+#### Option B: SQLite (No Docker Required)
+
+Set the SQLite database URL:
+
+```bash
+export DATABASE_URL="sqlite:./packages/backend/analytics.db"
+```
+
+### 4. Database Migration
+
+Navigate to the backend and run migrations:
+
+```bash
+cd packages/backend
+pnpm db:generate
+pnpm db:migrate
+```
+
+### 5. Start Development Environment
+
+From the root directory:
+
+```bash
+# Start all services
+./dev.sh
+
+# Or start individually
+pnpm --filter backend dev    # Backend on :8000
+pnpm --filter example dev    # Example on :3000
+```
+
+This will start:
+- ✅ Backend API server on http://localhost:8000
+- ✅ Example React app on http://localhost:3000
+- ✅ Database (PostgreSQL or SQLite)
+
+## How HONO Analytics Works
+
+import { DataFlowVisualization } from '@/components/interactive'
+
+<DataFlowVisualization />
+
+## SDK Integration
+
+### React/Next.js Integration
+
+Install the SDK:
+
+```bash
+pnpm add @hono-analytics/sdk
+```
+
+Set up the analytics provider:
+
+```tsx path=null start=null
+import { AnalyticsProvider } from '@hono-analytics/sdk/react'
+
+type TProps = {
+  children: React.ReactNode
+}
+
+export function App({ children }: TProps) {
+  return (
+    <AnalyticsProvider 
+      apiKey="your-api-key"
+      projectId="your-project-id"
+      endpoint="http://localhost:8000"
+      debug={process.env.NODE_ENV === 'development'}
+    >
+      {children}
+    </AnalyticsProvider>
+  )
+}
+```
+
+Use analytics in components:
+
+```tsx path=null start=null
+import { useAnalytics } from '@hono-analytics/sdk/react'
+
+function MyComponent() {
+  const analytics = useAnalytics()
+  
+  async function handleButtonClick() {
+    await analytics.track({
+      url: '/button-clicked',
+      durationMs: 500
+    })
+  }
+  
+  function handleUserLogin() {
+    analytics.identify({
+      id: 'user-123',
+      country: 'Netherlands',
+      city: 'Amsterdam'
+    })
+  }
+  
+  return (
+    <div>
+      <button onClick={handleButtonClick}>
+        Track Click
+      </button>
+      <button onClick={handleUserLogin}>
+        Identify User
+      </button>
+    </div>
+  )
+}
+```
+
+### Vanilla JavaScript Integration
+
+```js path=null start=null
+import { initAnalytics, track, identify } from '@hono-analytics/sdk'
+
+const analytics = initAnalytics({
+  apiKey: 'your-api-key',
+  projectId: 'your-project-id',
+  endpoint: 'http://localhost:8000'
+})
+
+await track({
+  url: '/page-visit',
+  durationMs: 2500
+})
+
+identify({
+  id: 'user-456',
+  country: 'Germany'
+})
+```
+
+## Verification
+
+### 1. Check Backend Health
+
+Visit http://localhost:8000/health or run:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### 2. Test Analytics Tracking
+
+Visit the example app at http://localhost:3000 and interact with it. Check the browser console for analytics debug logs.
+
+### 3. View Analytics Data
+
+Check your analytics data:
+
+```bash
+curl -H "x-api-key: your-development-api-key" \
+     "http://localhost:8000/metrics?range=7d"
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="React SDK Guide" href="/docs/sdk/react" description="Deep dive into React integration" />
+  <Card title="API Documentation" href="/docs/api" description="Complete API reference" />
+  <Card title="Configuration" href="/docs/configuration" description="Environment variables and settings" />
+  <Card title="Deployment" href="/docs/deployment" description="Production deployment guide" />
+</Cards>
+
+## Troubleshooting
+
+### Common Issues
+
+**Database Connection Failed**
+- Ensure PostgreSQL is running: `docker-compose ps`
+- Check DATABASE_URL in `.env`
+- Try SQLite fallback: `DATABASE_URL="sqlite:./packages/backend/analytics.db"`
+
+**401 Unauthorized**
+- Verify API key matches in backend `.env` and frontend config
+- Check DEFAULT_API_KEY in backend environment
+
+**CORS Errors**
+- Ensure frontend origin is in CORS allowlist (see `packages/backend/src/server.ts`)
+- Check that both frontend and backend are running
+
+For more troubleshooting, see the [Troubleshooting Guide](/docs/troubleshooting).
