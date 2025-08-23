@@ -17,7 +17,12 @@ type TBindings = {
 const app = new Hono<{ Bindings: TBindings }>()
 
 app.use('*', cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'http://localhost:5173',
+    'https://hono-analytics-docs.vercel.app'
+  ],
   allowMethods: ['GET', 'POST', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-dev-traffic'],
   credentials: true

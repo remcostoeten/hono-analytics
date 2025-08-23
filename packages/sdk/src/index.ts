@@ -60,3 +60,15 @@ export type {
   TPageviewData,
   TEventPayload
 }
+
+// Next.js specific exports
+export {
+  NextJSAnalyticsProvider,
+  AnalyticsPageTracker,
+  useAnalytics as useNextJSAnalytics,
+  NextJSPerformanceTracker,
+  createOptimizedTracker,
+  initServerAnalytics,
+  PERFORMANCE_IMPACT
+} from './nextjs.js'
+export type { TNextJSAnalyticsOptions } from './nextjs.js'

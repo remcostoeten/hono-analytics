@@ -1,141 +1,70 @@
 ---
 title: Getting Started
-description: Set up HONO Analytics in your project
+description: Get analytics working in 5 minutes
 ---
 
 # Getting Started
 
-Get HONO Analytics up and running in your project in just a few minutes.
+## Quick Start
 
-<Cards>
-  <Card title="Backend Setup" href="#backend-setup" />
-  <Card title="SDK Integration" href="#sdk-integration" />
-  <Card title="React Example" href="/docs/sdk/react" />
-  <Card title="API Reference" href="/docs/api" />
-</Cards>
-
-## Prerequisites
-
-- Node.js 18+ 
-- pnpm 8+
-- Docker (optional, for PostgreSQL)
-
-## Installation
-
-### 1. Clone and Install
+### 1. Start the Backend
 
 ```bash
 git clone https://github.com/your-org/hono-analytics.git
 cd hono-analytics
 pnpm install
-```
 
-### 2. Environment Setup
-
-Copy the example environment file:
-
-```bash
+# Copy environment file
 cp .env.example .env
-```
 
-Edit `.env` with your configuration:
-
-```bash path=/home/remcostoeten/current/hono-analytics/.env start=null
-# Database Configuration
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/analytics"
-# Or for SQLite: DATABASE_URL="sqlite:./packages/backend/analytics.db"
-
-# API Configuration
-DEFAULT_API_KEY="your-development-api-key"
-PORT=8000
-NODE_ENV=development
-
-# Optional
-LOG_LEVEL=info
-```
-
-### 3. Backend Setup
-
-Choose your database option:
-
-#### Option A: PostgreSQL (Recommended)
-
-Start PostgreSQL with Docker:
-
-```bash
+# Start with Docker (PostgreSQL)
 docker-compose up -d postgres
-```
 
-#### Option B: SQLite (No Docker Required)
-
-Set the SQLite database URL:
-
-```bash
+# Or use SQLite (no Docker needed)
 export DATABASE_URL="sqlite:./packages/backend/analytics.db"
-```
 
-### 4. Database Migration
-
-Navigate to the backend and run migrations:
-
-```bash
+# Run migrations and start server
 cd packages/backend
-pnpm db:generate
-pnpm db:migrate
+pnpm db:generate && pnpm db:migrate
+cd ../..
+pnpm --filter backend dev
 ```
 
-### 5. Start Development Environment
-
-From the root directory:
+### 2. Install SDK
 
 ```bash
-# Start all services
-./dev.sh
-
-# Or start individually
-pnpm --filter backend dev    # Backend on :8000
-pnpm --filter example dev    # Example on :3000
+npm install @hono-analytics/sdk
 ```
 
-This will start:
-- ✅ Backend API server on http://localhost:8000
-- ✅ Example React app on http://localhost:3000
-- ✅ Database (PostgreSQL or SQLite)
-
-## How HONO Analytics Works
-
-Here's an interactive visualization showing how user events flow through the analytics pipeline. The visualization automatically adapts to your site's dark theme:
-
-import { DataFlowVisualization } from '@/components/interactive'
-
-<DataFlowVisualization />
-
-## SDK Integration
-
-### React/Next.js Integration
-
-Install the SDK:
-
-```bash
-pnpm add @hono-analytics/sdk
-```
-
-Set up the analytics provider:
+### 3. Add to Your App
 
 ```tsx path=null start=null
+// Next.js - app/layout.tsx
+import { NextJSAnalyticsProvider } from '@hono-analytics/sdk'
+
+export default function RootLayout({ children }) {
+  return (
+    <NextJSAnalyticsProvider
+      options={{
+        apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY!,
+        projectId: process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID!,
+      }}
+    >
+      {children}
+    </NextJSAnalyticsProvider>
+  )
+}
+```
+
+```tsx path=null start=null
+// React - App.tsx
 import { AnalyticsProvider } from '@hono-analytics/sdk/react'
 
-type TProps = {
-  children: React.ReactNode
-}
-
-export function App({ children }: TProps) {
+function App({ children }) {
   return (
-    <AnalyticsProvider 
+    <AnalyticsProvider
       apiKey="your-api-key"
       projectId="your-project-id"
-      endpoint="http://localhost:8000"
-      debug={process.env.NODE_ENV === 'development'}
     >
       {children}
     </AnalyticsProvider>
@@ -143,63 +72,45 @@ export function App({ children }: TProps) {
 }
 ```
 
-Use analytics in components:
-
-```tsx path=null start=null
-import { useAnalytics } from '@hono-analytics/sdk/react'
-
-function MyComponent() {
-  const analytics = useAnalytics()
-  
-  async function handleButtonClick() {
-    await analytics.track({
-      url: '/button-clicked',
-      durationMs: 500
-    })
-  }
-  
-  function handleUserLogin() {
-    analytics.identify({
-      id: 'user-123',
-      country: 'Netherlands',
-      city: 'Amsterdam'
-    })
-  }
-  
-  return (
-    <div>
-      <button onClick={handleButtonClick}>
-        Track Click
-      </button>
-      <button onClick={handleUserLogin}>
-        Identify User
-      </button>
-    </div>
-  )
-}
-```
-
-### Vanilla JavaScript Integration
-
-```js path=null start=null
-import { initAnalytics, track, identify } from '@hono-analytics/sdk'
+```javascript path=null start=null
+// Vanilla JS
+import { initAnalytics, track } from '@hono-analytics/sdk'
 
 const analytics = initAnalytics({
   apiKey: 'your-api-key',
-  projectId: 'your-project-id',
-  endpoint: 'http://localhost:8000'
+  projectId: 'your-project-id'
 })
 
-await track({
-  url: '/page-visit',
-  durationMs: 2500
-})
-
-identify({
-  id: 'user-456',
-  country: 'Germany'
-})
+track({ url: '/page-visit' })
 ```
+
+### 4. Track Events
+
+```tsx path=null start=null
+import { useAnalytics } from '@hono-analytics/sdk'
+
+function Button() {
+  const analytics = useAnalytics()
+  
+  const handleClick = () => {
+    analytics.track({ url: '/button/click' })
+  }
+  
+  return <button onClick={handleClick}>Click me</button>
+}
+```
+
+## How It Works
+
+import { DataFlowVisualization } from '@/components/interactive'
+
+<DataFlowVisualization />
+
+## Verify It's Working
+
+✅ Backend health: http://localhost:8000/health  
+✅ Check browser console for analytics logs  
+✅ Query your data: `curl -H "x-api-key: your-key" "http://localhost:8000/metrics"`
 
 ## Verification
 

@@ -1,68 +1,40 @@
 ---
-title: HONO Analytics Documentation
-description: A self-hosted analytics solution built with HONO, TypeScript, and modern web technologies
+title: HONO Analytics
+description: Self-hosted analytics with TypeScript and HONO
 ---
 
 # HONO Analytics
 
-A self-hosted analytics solution built with HONO, TypeScript, and modern web technologies. Designed to be privacy-focused, lightweight, and developer-friendly.
+Self-hosted web analytics focused on users, not events. Built with HONO and TypeScript.
 
-## Features
+## Why HONO Analytics?
 
-- ✅ **User-centric analytics** (not event-centric)
-- ✅ **Session tracking** with 30-min inactivity timeout
-- ✅ **Developer traffic filtering** with automatic localhost detection
-- ✅ **Geographic data collection** with country/city tracking
-- ✅ **Device, browser, and OS detection** using user agent parsing
-- ✅ **UTM parameter tracking** for campaign attribution
-- ✅ **React provider + vanilla JS support** for all frameworks
-- ✅ **Privacy-focused** with user consent and data control
-- ✅ **Self-hosted** - your data stays on your servers
-- ✅ **TypeScript-first** with full type safety
+- **Privacy-first**: Your data stays on your servers
+- **User-centric**: Track users and sessions, not just events
+- **Developer-friendly**: TypeScript SDK, React provider, vanilla JS support
+- **Lightweight**: ~8KB gzipped, minimal performance impact
+- **Session tracking**: 30-min inactivity timeout, automatic device detection
 
-## Quick Navigation
+## Get Started
 
 <Cards>
-  <Card title="Getting Started" href="/docs/getting-started" description="Set up HONO Analytics in minutes" />
-  <Card title="SDK Documentation" href="/docs/sdk" description="Integrate analytics into your applications" />
-  <Card title="API Reference" href="/docs/api" description="Complete API documentation" />
-  <Card title="Configuration" href="/docs/configuration" description="Environment variables and settings" />
+  <Card title="Getting Started" href="/docs/getting-started" description="Get running in 5 minutes" />
+  <Card title="Examples" href="/docs/examples" description="Copy-paste integration examples" />
+  <Card title="API Reference" href="/docs/api" description="Complete API docs" />
+  <Card title="SDK Guide" href="/docs/sdk" description="React, Next.js, and vanilla JS" />
 </Cards>
 
-## Architecture
-
-This is a monorepo containing:
-
-- **packages/backend/**: HONO-based API server with Postgres/SQLite support
-- **packages/sdk/**: TypeScript client SDK for web applications  
-- **apps/example/**: Sample React app demonstrating SDK usage
-- **apps/docs/**: This documentation site
-
-## Quick Start
+## Quick Install
 
 ```bash
-# Clone and install
-git clone https://github.com/your-org/hono-analytics.git
-cd hono-analytics
-pnpm install
-
-# Start development environment (requires Docker for PostgreSQL)
+# 1. Start backend
+git clone [repo] && cd hono-analytics && pnpm install
+docker-compose up -d postgres
 ./dev.sh
 
-# Or use SQLite fallback
-DATABASE_URL="sqlite:./packages/backend/analytics.db" ./dev.sh
+# 2. Install SDK
+npm install @hono-analytics/sdk
+
+# 3. Add to your app
+import { AnalyticsProvider } from '@hono-analytics/sdk/react'
 ```
-
-This will start:
-- Backend API server on http://localhost:8000
-- Example React app on http://localhost:3000
-- PostgreSQL database (or SQLite if Docker unavailable)
-
-## Next Steps
-
-<Cards>
-  <Card title="Installation Guide" href="/docs/getting-started" />
-  <Card title="React Integration" href="/docs/sdk/react" />
-  <Card title="Deployment" href="/docs/deployment" />
-  <Card title="Examples" href="/docs/examples" />
-</Cards>

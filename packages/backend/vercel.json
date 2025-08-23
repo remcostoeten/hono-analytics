@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "functions": {
+    "src/server.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/server.ts"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "ENABLE_BUILD_CACHE": "true"
+    }
+  }
+}

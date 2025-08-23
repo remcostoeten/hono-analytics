@@ -1,3 +1,6 @@
+import { config } from 'dotenv'
+config() // Load environment variables
+
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres'
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3'
 import pg from 'pg'
@@ -20,6 +23,8 @@ function createDatabaseClient(): TDatabaseClient {
     return drizzleSqlite(sqliteClient, { schema: sqliteSchema })
   }
 
+  // Use standard PostgreSQL driver (works with all PostgreSQL databases including Neon)
+  console.log('Using PostgreSQL driver for Neon database')
   const pgClient = new pg.Pool({
     connectionString: databaseUrl,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
