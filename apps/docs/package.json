@@ -14,7 +14,8 @@
     "react-dom": "^19.1.1",
     "fumadocs-ui": "15.7.1",
     "fumadocs-core": "15.7.1",
-    "fumadocs-mdx": "11.8.0"
+    "fumadocs-mdx": "11.8.0",
+    "@hono-analytics/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "24.3.0",
