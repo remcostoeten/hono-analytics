@@ -1,0 +1,33 @@
+{
+  "name": "@hono-analytics/backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx --watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "type-check": "tsc --noEmit",
+    "migrate": "tsx src/db/migrate.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "@hono/zod-validator": "^0.7.2",
+    "hono": "^4.9.4",
+    "drizzle-orm": "^0.38.2",
+    "pg": "^8.13.1",
+    "better-sqlite3": "^11.8.0",
+    "dotenv": "^16.4.7",
+    "zod": "^4.0.17",
+    "ua-parser-js": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/pg": "^8.11.10",
+    "@types/better-sqlite3": "^7.6.11",
+    "drizzle-kit": "^0.29.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.7.2"
+  }
+}
