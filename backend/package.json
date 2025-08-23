@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "type-check": "tsc --noEmit",
-    "migrate": "tsx src/db/migrate.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:setup": "pnpm db:generate && pnpm db:migrate",
     "clean": "rm -rf dist"
   },
   "dependencies": {
