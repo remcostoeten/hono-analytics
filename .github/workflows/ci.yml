@@ -1,0 +1,197 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: analytics_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Type check backend
+      run: pnpm --filter backend type-check
+
+    - name: Build backend
+      run: pnpm --filter backend build
+
+    - name: Test PostgreSQL migrations
+      env:
+        DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/analytics_test
+        NODE_ENV: test
+        DEFAULT_API_KEY: test-key-12345
+      run: |
+        cd backend
+        pnpm db:generate
+        pnpm db:migrate
+
+    - name: Test SQLite migrations
+      env:
+        DATABASE_URL: sqlite:./test.db
+        NODE_ENV: test
+        DEFAULT_API_KEY: test-key-12345
+      run: |
+        cd backend
+        pnpm db:generate
+        pnpm db:migrate
+
+  sdk-test:
+    name: SDK Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Type check SDK
+      run: pnpm --filter sdk type-check
+
+    - name: Build SDK
+      run: pnpm --filter sdk build
+
+    - name: Check build outputs
+      run: |
+        ls -la sdk/dist/
+        test -f sdk/dist/index.js
+        test -f sdk/dist/index.cjs
+        test -f sdk/dist/react.js
+        test -f sdk/dist/react.cjs
+
+  example-test:
+    name: Example App Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build SDK (required for example)
+      run: pnpm --filter sdk build
+
+    - name: Type check example
+      run: pnpm --filter example type-check
+
+    - name: Build example
+      run: pnpm --filter example build
+
+  lint-and-format:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Check TypeScript in all packages
+      run: pnpm type-check
+
+    - name: Verify no TypeScript errors
+      run: |
+        pnpm --filter backend tsc --noEmit
+        pnpm --filter sdk tsc --noEmit
+        pnpm --filter example tsc --noEmit
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Run security audit
+      run: pnpm audit --audit-level high
+
+    - name: Check for outdated dependencies
+      run: pnpm outdated || true
