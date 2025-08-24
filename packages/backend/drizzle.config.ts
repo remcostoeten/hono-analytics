@@ -13,7 +13,7 @@ const isPostgres = !databaseUrl.startsWith('sqlite:')
 
 export default {
   schema: isPostgres ? './src/db/schema.ts' : './src/db/schema-sqlite.ts',
-  out: './migrations',
+  out: isPostgres ? './migrations/pg' : './migrations/sqlite',
   dialect: isPostgres ? 'postgresql' : 'sqlite',
   dbCredentials: isPostgres 
     ? { url: databaseUrl }

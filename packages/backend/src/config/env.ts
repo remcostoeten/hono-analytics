@@ -16,11 +16,15 @@ function validateEnvironment(): TEnvironmentConfig {
   const nodeEnv = (process.env.NODE_ENV as TEnvironment) || 'development'
   const port = parseInt(process.env.PORT || '8000', 10)
   const databaseUrl = process.env.DATABASE_URL
-  const defaultApiKey = process.env.DEFAULT_API_KEY || 'dev-key-12345'
+  const defaultApiKey = process.env.DEFAULT_API_KEY
   const logLevel = (process.env.LOG_LEVEL as TEnvironmentConfig['LOG_LEVEL']) || 'info'
 
   if (!databaseUrl) {
     throw new Error('DATABASE_URL environment variable is required')
+  }
+
+  if (!defaultApiKey) {
+    throw new Error('DEFAULT_API_KEY environment variable is required')
   }
 
   if (isNaN(port) || port < 1 || port > 65535) {

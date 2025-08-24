@@ -84,12 +84,3 @@ export function clearSession(): void {
   setCookie(STORAGE_KEYS.SESSION_ID, '', -1)
 }
 
-export function clearAll(): void {
-  if (isLocalStorageAvailable()) {
-    localStorage.removeItem(STORAGE_KEYS.USER_ID)
-    localStorage.removeItem(STORAGE_KEYS.SESSION_ID)
-  }
-  
-  setCookie(STORAGE_KEYS.USER_ID, '', -1)
-  setCookie(STORAGE_KEYS.SESSION_ID, '', -1)
-}

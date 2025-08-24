@@ -5,30 +5,34 @@ import { geoSchema, deviceSchema, optionalIdSchema } from './common.js'
  * Schemas for the track endpoint
  */
 
-// User tracking data
-export const userTrackingSchema = z.object({
+const userTrackingSchema = z.object({
   id: optionalIdSchema,
   ...deviceSchema.shape,
   ...geoSchema.shape
 })
 
-// Session tracking data
-export const sessionTrackingSchema = z.object({
+const sessionTrackingSchema = z.object({
   id: optionalIdSchema,
-  referrer: z.string().url().optional(),
-  origin: z.string().optional()
+  referrer: z.string().optional(),
+  origin: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmTerm: z.string().optional(),
+  utmContent: z.string().optional()
 })
 
-// Pageview tracking data
-export const pageviewTrackingSchema = z.object({
+const pageviewTrackingSchema = z.object({
   url: z.string().url('Invalid URL format'),
   timestamp: z.string().datetime().optional(),
   durationMs: z.number().min(0).optional(),
   title: z.string().optional(),
-  path: z.string().optional()
+  path: z.string().optional(),
+  scrollDepth: z.number().min(0).max(100).optional(),
+  clicks: z.number().min(0).optional(),
+  isExit: z.boolean().optional()
 })
 
-// Main tracking payload schema
 export const trackingPayloadSchema = z.object({
   user: userTrackingSchema,
   session: sessionTrackingSchema,

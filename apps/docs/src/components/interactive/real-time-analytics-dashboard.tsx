@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { EnvironmentSwitcher } from '@/components/analytics/EnvironmentSwitcher'
 import type { TAnalyticsEnvironment } from '@/lib/analytics'
+import { EnvironmentSwitcher } from '../analytics/environment-switcher'
 
 type TMetricsData = {
   totals: {
@@ -245,14 +245,12 @@ export function RealTimeAnalyticsDashboard({
 
   return (
     <div className={`real-time-analytics-dashboard ${className}`} data-component="analytics-dashboard">
-      {/* Environment Switcher */}
       <EnvironmentSwitcher
         currentEnvironment={currentEnvironment}
         onEnvironmentChange={setCurrentEnvironment}
         className="mb-6"
       />
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-blue-950/20 to-purple-950/20 rounded-lg border border-fd-border">
         <div>
           <h3 className="text-lg font-semibold text-fd-foreground">
@@ -293,7 +291,6 @@ export function RealTimeAnalyticsDashboard({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Key Metrics */}
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-fd-card border border-fd-border rounded-lg p-4">
             <div className="flex items-center justify-between">
@@ -348,7 +345,6 @@ export function RealTimeAnalyticsDashboard({
           </div>
         </div>
 
-        {/* Real-time Events */}
         <div className="bg-fd-card border border-fd-border rounded-lg overflow-hidden">
           <div className="bg-fd-muted/30 px-4 py-3 border-b border-fd-border">
             <h4 className="font-semibold text-fd-foreground flex items-center">
@@ -394,9 +390,7 @@ export function RealTimeAnalyticsDashboard({
         </div>
       </div>
 
-      {/* Charts and Breakdowns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Top Pages */}
         <div className="bg-fd-card border border-fd-border rounded-lg overflow-hidden">
           <div className="bg-fd-muted/30 px-4 py-3 border-b border-fd-border">
             <h4 className="font-semibold text-fd-foreground">📈 Top Pages</h4>

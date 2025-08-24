@@ -5,6 +5,7 @@ import { serve } from '@hono/node-server'
 import { db, serverConfig, getApiInfo, getDatabaseInfo } from './config/index.js'
 import { trackRoute } from './routes/track.js'
 import { metricsRoute } from './routes/metrics.js'
+import { trackRateLimiter, metricsRateLimiter } from './middleware/rateLimiter.js'
 import type { TDatabase } from './config/index.js'
 
 type TBindings = {
@@ -193,7 +194,12 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+app.use('/track/*', trackRateLimiter)
+app.use('/t/*', trackRateLimiter)
+app.use('/metrics/*', metricsRateLimiter)
+
 app.route('/track', trackRoute)
+app.route('/t', trackRoute)
 app.route('/metrics', metricsRoute)
 
 export { app }

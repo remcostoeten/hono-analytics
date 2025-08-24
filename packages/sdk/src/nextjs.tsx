@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, use } from 'react'
-import { usePathname, useSearchParams, useRouter } from 'next/navigation'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createAnalyticsInstance } from './analytics.js'
-import type { TAnalyticsOptions, TAnalyticsInstance, TUserData, TPageviewData } from './types.js'
+import type { TAnalyticsOptions, TAnalyticsInstance, TPageviewData } from './types.js'
 
 export type TNextJSAnalyticsOptions = TAnalyticsOptions & {
   // Next.js specific options
@@ -41,8 +41,6 @@ export async function AnalyticsPageTracker({
 
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') || headersList.get('x-url')
-  const userAgent = headersList.get('user-agent')
-  const referer = headersList.get('referer')
 
   // Skip tracking for excluded patterns
   if (pathname && options.excludePatterns?.some(pattern => 
@@ -84,25 +82,6 @@ export function useAnalytics() {
 }
 
 // Client-side hook for Next.js that handles hydration properly
-export function useNextJSAnalytics(options: TNextJSAnalyticsOptions) {
-  const [analytics, setAnalytics] = useState<TAnalyticsInstance | null>(null)
-  const [isHydrated, setIsHydrated] = useState(false)
-
-  useEffect(() => {
-    setIsHydrated(true)
-    
-    if (typeof window !== 'undefined') {
-      const instance = createAnalyticsInstance(options)
-      setAnalytics(instance)
-      
-      return () => {
-        instance.destroy()
-      }
-    }
-  }, [])
-
-  return isHydrated ? analytics : null
-}
 
 // Enhanced client component that handles Next.js routing
 export function NextJSAnalyticsProvider({
@@ -117,7 +96,6 @@ export function NextJSAnalyticsProvider({
   const [analytics, setAnalytics] = useState<TAnalyticsInstance | null>(null)
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const router = useRouter()
 
   // Initialize analytics only on client
   useEffect(() => {

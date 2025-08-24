@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+  import { useEffect, Suspense } from 'react'
 import { AnalyticsProvider as SDKAnalyticsProvider, useAnalytics } from '@hono-analytics/sdk/react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { getAnalyticsConfig, isAnalyticsEnabled, getCurrentEnvironment } from '@/lib/analytics'
@@ -101,8 +101,12 @@ export function DocsAnalyticsProvider({ children }: TProps) {
       endpoint={config.endpoint}
       debug={currentEnv === 'development'}
     >
-      <PageViewTracker />
-      <InteractionTracker />
+      <Suspense fallback={null}>
+        <PageViewTracker />
+      </Suspense>
+      <Suspense fallback={null}>
+        <InteractionTracker />
+      </Suspense>
       {children}
     </SDKAnalyticsProvider>
   )

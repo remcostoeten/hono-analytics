@@ -80,7 +80,7 @@ export function ApiVisualizer({
         id: requestId,
         status: 0,
         statusText: 'Network Error',
-        data: { error: error.message },
+        data: { error: error instanceof Error ? error.message : String(error) },
         timing: Date.now() - startTime,
         timestamp: Date.now()
       }

@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
-pnpm-lock.yaml
+
+# Lock files (keep pnpm-lock.yaml tracked)
+package-lock.json
+yarn.lock
+bun.lockb
+*.lock
 
 # Build outputs
 dist/

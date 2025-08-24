@@ -1,15 +1,15 @@
 import '@/app/global.css';
+import { DocsAnalyticsProvider } from '@/components/analytics/analytics-provider';
 import { RootProvider } from 'fumadocs-ui/provider';
-import { Inter } from 'next/font/google';
-import { DocsAnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
+import { Outfit } from 'next/font/google';
 
-const inter = Inter({
+const outfit =  Outfit({
   subsets: ['latin'],
 });
 
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html lang="en" className={outfit.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
         <RootProvider>
           <DocsAnalyticsProvider>

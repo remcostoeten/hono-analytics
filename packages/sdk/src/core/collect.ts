@@ -1,5 +1,5 @@
 import { UAParser } from 'ua-parser-js'
-import type { TDeviceInfo, TConnectionType, TUtmParams } from '../types.js'
+import type { TDeviceInfo, TConnectionType } from '../types.js'
 
 export function collectDeviceInfo(): TDeviceInfo {
   const parser = new UAParser(navigator.userAgent)
@@ -55,38 +55,6 @@ function getConnectionType(): TConnectionType {
   }
 }
 
-export function extractUtmParams(url?: string): TUtmParams {
-  try {
-    let urlObj: URL
-    
-    if (!url) {
-      // No URL provided, use current location
-      urlObj = new URL(window.location.href)
-    } else if (url.startsWith('http://') || url.startsWith('https://')) {
-      // Full URL provided
-      urlObj = new URL(url)
-    } else {
-      // Relative URL provided, use current origin as base
-      urlObj = new URL(url, window.location.origin)
-    }
-    
-    const params: TUtmParams = {}
-    
-    const utmParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
-    
-    for (const param of utmParams) {
-      const value = urlObj.searchParams.get(param)
-      if (value) {
-        params[param] = value
-      }
-    }
-    
-    return params
-  } catch (error) {
-    console.warn('Failed to extract UTM parameters from URL:', url, error)
-    return {}
-  }
-}
 
 export function getReferrer(): string {
   return document.referrer || ''
@@ -96,14 +64,4 @@ export function getCurrentUrl(): string {
   return window.location.href
 }
 
-export function isLocalhost(): boolean {
-  const hostname = window.location.hostname.toLowerCase()
-  return hostname === 'localhost' || 
-         hostname === '127.0.0.1' || 
-         hostname === '0.0.0.0' ||
-         hostname.includes('.local')
-}
 
-export function getTimezoneOffset(): number {
-  return new Date().getTimezoneOffset()
-}

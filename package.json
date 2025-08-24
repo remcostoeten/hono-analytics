@@ -2,17 +2,19 @@
   "name": "hono-analytics",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@9",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "./dev.sh",
     "build": "pnpm -r build",
     "type-check": "pnpm -r type-check",
     "clean": "pnpm -r clean"
   },
   "devDependencies": {
-    "typescript": "^5.7.2"
+    "typescript": "^5.9.2"
   }
 }
