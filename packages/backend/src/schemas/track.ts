@@ -35,30 +35,4 @@ export const trackingPayloadSchema = z.object({
   pageview: pageviewTrackingSchema
 })
 
-// Headers schema for track endpoint
-export const trackHeadersSchema = z.object({
-  'x-api-key': z.string().min(1, 'API key is required'),
-  'x-dev-traffic': z.string().optional(),
-  'user-agent': z.string().optional(),
-  host: z.string().optional()
-})
 
-// Event tracking schema (for future events beyond pageviews)
-export const eventTrackingSchema = z.object({
-  name: z.string().min(1),
-  properties: z.record(z.string(), z.any()).optional(),
-  timestamp: z.string().datetime().optional()
-})
-
-// Extended tracking payload with events
-export const extendedTrackingPayloadSchema = trackingPayloadSchema.extend({
-  events: z.array(eventTrackingSchema).optional()
-})
-
-// Response schemas
-export const trackSuccessResponseSchema = z.null()
-
-export const trackErrorResponseSchema = z.object({
-  error: z.string(),
-  code: z.enum(['INVALID_API_KEY', 'VALIDATION_ERROR', 'INTERNAL_ERROR']).optional()
-})

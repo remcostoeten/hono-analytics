@@ -1,0 +1,5 @@
+---
+description: We use types exclusivly, never interfaces only if there's no other choice. We prefix every type with T e.g.: TEentity, TCrudDestroy. If there is only 1 type in the file which is local (not exported) we automatically call that type `TProps`
+globs:
+alwaysApply: true
+---

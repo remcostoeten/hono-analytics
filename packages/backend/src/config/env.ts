@@ -54,6 +54,4 @@ export function isProduction(): boolean {
   return env.NODE_ENV === 'production'
 }
 
-export function isTest(): boolean {
-  return env.NODE_ENV === 'test'
-}
+

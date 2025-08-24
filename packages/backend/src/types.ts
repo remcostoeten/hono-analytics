@@ -1,44 +1,4 @@
-import type { InferSelectModel, InferInsertModel } from 'drizzle-orm'
-import type { projects, users, sessions, pageviews } from './db/schema.js'
-
-export type TProject = InferSelectModel<typeof projects>
-export type TUser = InferSelectModel<typeof users>
-export type TSession = InferSelectModel<typeof sessions>
-export type TPageview = InferSelectModel<typeof pageviews>
-
-export type TInsertProject = InferInsertModel<typeof projects>
-export type TInsertUser = InferInsertModel<typeof users>
-export type TInsertSession = InferInsertModel<typeof sessions>
-export type TInsertPageview = InferInsertModel<typeof pageviews>
-
-export type TTrackingPayload = {
-  user: {
-    id?: string
-    device?: string
-    browser?: string
-    os?: string
-    country?: string
-    city?: string
-    lat?: number
-    lng?: number
-  }
-  session: {
-    id?: string
-    referrer?: string
-    origin?: string
-  }
-  pageview: {
-    url: string
-    timestamp?: string
-    durationMs?: number
-  }
-}
-
-export type TMetricsQuery = {
-  project?: string
-  range?: string
-  exclude_dev?: string
-}
+// Database model types are defined inline where needed
 
 export type TMetricsResponse = {
   totals: {
@@ -74,15 +34,4 @@ export type TMetricsResponse = {
   }
 }
 
-export type TEnvironmentVariables = {
-  NODE_ENV: 'development' | 'production' | 'test'
-  PORT: string
-  DATABASE_URL: string
-  DEFAULT_API_KEY: string
-  LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error'
-  CORS_ORIGIN?: string
-}
 
-export type TError = {
-  message: string
-}

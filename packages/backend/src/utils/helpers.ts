@@ -45,43 +45,7 @@ export function generateSessionId(): string {
   return crypto.randomUUID()
 }
 
-export function parseRange(range?: string): { startDate: Date; endDate: Date } {
-  const endDate = new Date()
-  let startDate = new Date()
-  
-  if (!range) {
-    startDate.setDate(endDate.getDate() - 7)
-    return { startDate, endDate }
-  }
-  
-  const match = range.match(/(\d+)([dwmy])/)
-  if (!match) {
-    startDate.setDate(endDate.getDate() - 7)
-    return { startDate, endDate }
-  }
-  
-  const [, num, unit] = match
-  const amount = parseInt(num, 10)
-  
-  switch (unit) {
-    case 'd':
-      startDate.setDate(endDate.getDate() - amount)
-      break
-    case 'w':
-      startDate.setDate(endDate.getDate() - (amount * 7))
-      break
-    case 'm':
-      startDate.setMonth(endDate.getMonth() - amount)
-      break
-    case 'y':
-      startDate.setFullYear(endDate.getFullYear() - amount)
-      break
-    default:
-      startDate.setDate(endDate.getDate() - 7)
-  }
-  
-  return { startDate, endDate }
-}
+
 
 export function parseOrigin(referrer?: string): string {
   if (!referrer) return 'direct'
@@ -103,22 +67,4 @@ export function parseOrigin(referrer?: string): string {
   }
 }
 
-export function extractUtmParams(url: string): Record<string, string> {
-  try {
-    const urlObj = new URL(url)
-    const utm: Record<string, string> = {}
-    
-    const utmParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
-    
-    for (const param of utmParams) {
-      const value = urlObj.searchParams.get(param)
-      if (value) {
-        utm[param] = value
-      }
-    }
-    
-    return utm
-  } catch {
-    return {}
-  }
-}
+
