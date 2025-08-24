@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Deployment script for Hono Analytics Backend with Neon Database
 
 export PATH="/home/remcostoeten/.fly/bin:$PATH"
@@ -13,11 +15,32 @@ if ! flyctl auth whoami &> /dev/null; then
     exit 1
 fi
 
+# Load DATABASE_URL from .env if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE=""
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  ENV_FILE="$SCRIPT_DIR/.env"
+elif [ -f "$SCRIPT_DIR/../../.env" ]; then
+  ENV_FILE="$SCRIPT_DIR/../../.env"
+fi
+
+if [ -n "${ENV_FILE}" ]; then
+  echo "🔧 Loading environment from ${ENV_FILE}"
+  set -a
+  . "$ENV_FILE"
+  set +a
+fi
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "❌ DATABASE_URL is not set. Please define it in ${ENV_FILE:-.env} or export it."
+  exit 1
+fi
+
 # Set secrets for production
 echo "🔐 Setting up environment variables..."
 
 flyctl secrets set \
-  DATABASE_URL="postgresql://neondb_owner:npg_Yij79QvoHSGc@ep-proud-math-a2ew3zb1-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require" \
+  DATABASE_URL="$DATABASE_URL" \
   NODE_ENV="production" \
   DEFAULT_API_KEY="prod-key-$(openssl rand -hex 16)" \
   CORS_ORIGIN="http://localhost:3000,https://your-docs-site.com" \
