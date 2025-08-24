@@ -111,7 +111,11 @@ main() {
   # Setup environment variables
   export NODE_ENV="development"
   export PORT="8000"
-  export DEFAULT_API_KEY="dev-key-12345"
+  # Generate a secure dev API key if not set
+  if [ -z "$DEFAULT_API_KEY" ]; then
+    export DEFAULT_API_KEY="dev-$(openssl rand -hex 16 2>/dev/null || cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1)"
+    echo "🔑 Generated development API key: $DEFAULT_API_KEY"
+  fi
   export LOG_LEVEL="info"
   
   # Install dependencies if needed
@@ -135,7 +139,7 @@ main() {
   echo "   Health:   http://localhost:8000/health"
   echo "   Example:  http://localhost:3000"
   echo ""
-  echo "🔑 API Key: dev-key-12345"
+  echo "🔑 API Key: $DEFAULT_API_KEY"
   echo ""
   echo "Press Ctrl+C to stop all services"
   

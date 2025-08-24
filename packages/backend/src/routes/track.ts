@@ -9,6 +9,13 @@ import {
   generateSessionId, 
   parseOrigin 
 } from '../utils/helpers.js'
+import { 
+  sanitizeText, 
+  sanitizeUrl, 
+  sanitizeApiKey, 
+  sanitizeCountryCode,
+  sanitizeNumber
+} from '../utils/sanitize.js'
 import { trackingPayloadSchema } from '../schemas/index.js'
 import type { TDatabase } from '../config/index.js'
 
@@ -20,7 +27,7 @@ export const trackRoute = new Hono<{ Bindings: TBindings }>()
 
 trackRoute.post('/', zValidator('json', trackingPayloadSchema), async (c) => {
   const payload = c.req.valid('json')
-  const apiKey = c.req.header('x-api-key')
+  const apiKey = sanitizeApiKey(c.req.header('x-api-key'))
   const devHeader = c.req.header('x-dev-traffic')
   const host = c.req.header('host')
   const userAgent = c.req.header('user-agent') || ''
@@ -84,13 +91,13 @@ trackRoute.post('/', zValidator('json', trackingPayloadSchema), async (c) => {
         .values({
           id: userId,
           projectId,
-          device: userAgentInfo.device,
-          browser: userAgentInfo.browser,
-          os: userAgentInfo.os,
-          country: payload.user.country,
-          city: payload.user.city,
-          lat: payload.user.lat,
-          lng: payload.user.lng,
+          device: sanitizeText(userAgentInfo.device, 100),
+          browser: sanitizeText(userAgentInfo.browser, 100),
+          os: sanitizeText(userAgentInfo.os, 100),
+          country: sanitizeCountryCode(payload.user.country),
+          city: sanitizeText(payload.user.city, 100),
+          lat: sanitizeNumber(payload.user.lat),
+          lng: sanitizeNumber(payload.user.lng),
           isDev
         })
         .returning()
@@ -124,8 +131,8 @@ trackRoute.post('/', zValidator('json', trackingPayloadSchema), async (c) => {
         .values({
           id: sessionId,
           userId: userId,
-          referrer: payload.session.referrer,
-          origin
+          referrer: sanitizeUrl(payload.session.referrer),
+          origin: sanitizeText(origin, 100)
         })
         .returning()
       
@@ -133,13 +140,22 @@ trackRoute.post('/', zValidator('json', trackingPayloadSchema), async (c) => {
     }
     
     if (sessionId) {
+      const sanitizedUrl = sanitizeUrl(payload.pageview.url)
+      const url = new URL(sanitizedUrl || 'http://unknown')
       await database
         .insert(schema.pageviews)
         .values({
           sessionId: sessionId,
-          url: payload.pageview.url,
+          url: sanitizedUrl,
+          path: sanitizeText(url.pathname, 500),
+          queryParams: sanitizeText(url.search, 500),
+          hash: sanitizeText(url.hash, 100),
+          title: sanitizeText(payload.pageview.title, 200),
           timestamp: payload.pageview.timestamp ? new Date(payload.pageview.timestamp) : new Date(),
-          durationMs: payload.pageview.durationMs
+          timeOnPage: sanitizeNumber(payload.pageview.durationMs),
+          scrollDepth: sanitizeNumber(payload.pageview.scrollDepth),
+          clicks: sanitizeNumber(payload.pageview.clicks) || 0,
+          isExit: payload.pageview.isExit || false
         })
     }
     

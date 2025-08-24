@@ -13,8 +13,13 @@ const userTrackingSchema = z.object({
 
 const sessionTrackingSchema = z.object({
   id: optionalIdSchema,
-  referrer: z.string().url().optional(),
-  origin: z.string().optional()
+  referrer: z.string().optional(),
+  origin: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmTerm: z.string().optional(),
+  utmContent: z.string().optional()
 })
 
 const pageviewTrackingSchema = z.object({
@@ -22,7 +27,10 @@ const pageviewTrackingSchema = z.object({
   timestamp: z.string().datetime().optional(),
   durationMs: z.number().min(0).optional(),
   title: z.string().optional(),
-  path: z.string().optional()
+  path: z.string().optional(),
+  scrollDepth: z.number().min(0).max(100).optional(),
+  clicks: z.number().min(0).optional(),
+  isExit: z.boolean().optional()
 })
 
 export const trackingPayloadSchema = z.object({

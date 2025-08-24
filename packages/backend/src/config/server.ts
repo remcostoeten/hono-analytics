@@ -1,10 +1,11 @@
-import { env, isDevelopment } from './env.js'
+import { env, isDevelopment, isProduction } from './env.js'
 
 type TCorsConfig = {
-  origin: string[]
+  origin: string[] | string
   allowMethods: string[]
   allowHeaders: string[]
   credentials: boolean
+  maxAge?: number
 }
 
 type TServerConfig = {
@@ -14,18 +15,39 @@ type TServerConfig = {
   logLevel: string
 }
 
-function getCorsOrigins(): string[] {
+function getCorsOrigins(): string[] | string {
   const corsOrigin = process.env.CORS_ORIGIN
   
   if (corsOrigin) {
-    return corsOrigin.split(',').map(origin => origin.trim())
+    const origins = corsOrigin.split(',').map(origin => origin.trim()).filter(Boolean)
+    
+    for (const origin of origins) {
+      if (origin === '*') {
+        console.warn('⚠️  Warning: Using wildcard (*) CORS origin is not recommended for production')
+        if (!isDevelopment()) {
+          throw new Error('Wildcard CORS origin is not allowed in production')
+        }
+        return '*'
+      }
+      
+      try {
+        new URL(origin)
+      } catch {
+        throw new Error(`Invalid CORS origin: ${origin}`)
+      }
+    }
+    
+    return origins
   }
   
   if (isDevelopment()) {
     return [
       'http://localhost:3000',
       'http://localhost:3001', 
-      'http://localhost:5173'
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:5173'
     ]
   }
   
@@ -42,7 +64,8 @@ function getServerConfig(): TServerConfig {
       origin: getCorsOrigins(),
       allowMethods: ['GET', 'POST', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-dev-traffic'],
-      credentials: true
+      credentials: !isProduction(),
+      maxAge: 600
     },
     logLevel: env.LOG_LEVEL
   }

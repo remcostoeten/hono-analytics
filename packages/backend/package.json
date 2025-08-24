@@ -16,22 +16,25 @@
   "dependencies": {
     "@hono/node-server": "^1.19.0",
     "@hono/zod-validator": "^0.7.2",
-    "@neondatabase/serverless": "^0.10.1",
-    "better-sqlite3": "^11.8.0",
-    "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.38.2",
+    "@neondatabase/serverless": "^1.0.1",
+    "@types/sanitize-html": "^2.16.0",
+    "better-sqlite3": "^12.2.0",
+    "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.4",
     "hono": "^4.9.4",
-    "pg": "^8.13.1",
-    "ua-parser-js": "^2.0.0",
-    "zod": "^4.0.17"
+    "hono-rate-limiter": "^0.4.2",
+    "pg": "^8.16.3",
+    "sanitize-html": "^2.17.0",
+    "ua-parser-js": "^2.0.4",
+    "zod": "^4.1.1"
   },
   "devDependencies": {
     "@flydotio/dockerfile": "^0.7.10",
-    "@types/better-sqlite3": "^7.6.11",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.3.0",
-    "@types/pg": "^8.11.10",
-    "drizzle-kit": "^0.29.0",
-    "tsx": "^4.20.4",
-    "typescript": "^5.7.2"
+    "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   }
 }
