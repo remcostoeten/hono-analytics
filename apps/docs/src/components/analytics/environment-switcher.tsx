@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import type { TAnalyticsEnvironment } from '@/lib/analytics'
 
 type TProps = {
@@ -124,3 +123,4 @@ export function EnvironmentSwitcher({
       </div>
     </div>
   )
+}

@@ -1,4 +1,3 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { AnalyticsProvider } from '@hono-analytics/sdk/react'
 import { App } from './App.tsx'

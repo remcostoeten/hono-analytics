@@ -1,6 +1,6 @@
 import { getUserId, setUserId } from './core/storage.js'
 import { getCurrentSessionId, initializeSessionTracking, destroySessionTracking } from './core/session.js'
-import { collectDeviceInfo, extractUtmParams, getReferrer, getCurrentUrl, isLocalhost } from './core/collect.js'
+import { collectDeviceInfo, getReferrer, getCurrentUrl } from './core/collect.js'
 import { initializeTransport, sendEvent, destroyTransport } from './core/transport.js'
 import type { TAnalyticsOptions, TAnalyticsInstance, TUserData, TPageviewData, TEventPayload } from './types.js'
 
@@ -23,7 +23,6 @@ function createAnalyticsInstance(options: TAnalyticsOptions): TAnalyticsInstance
     const sessionId = getCurrentSessionId()
     const url = data.url || getCurrentUrl()
     const referrer = getReferrer()
-    const utmParams = extractUtmParams(url)
 
     const payload: TEventPayload = {
       user: {

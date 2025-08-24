@@ -17,12 +17,6 @@ export type TUserData = {
   lng?: number
 }
 
-export type TSessionData = {
-  id?: string
-  referrer?: string
-  origin?: string
-}
-
 export type TPageviewData = {
   url: string
   timestamp?: string
@@ -31,7 +25,11 @@ export type TPageviewData = {
 
 export type TEventPayload = {
   user: TUserData
-  session: TSessionData
+  session: {
+    id?: string
+    referrer?: string
+    origin?: string
+  }
   pageview: TPageviewData
 }
 
@@ -50,13 +48,6 @@ export type TDeviceInfo = {
   userAgent: string
 }
 
-export type TUtmParams = {
-  utm_source?: string
-  utm_medium?: string
-  utm_campaign?: string
-  utm_term?: string
-  utm_content?: string
-}
 
 export type TAnalyticsInstance = {
   track: (data?: Partial<TPageviewData>) => Promise<void>

@@ -12,6 +12,4 @@ export * from './track.js'
 // Metrics endpoint schemas  
 export * from './metrics.js'
 
-// Re-export zod for convenience
-export { z } from 'zod'
 
