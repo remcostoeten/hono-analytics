@@ -2,13 +2,10 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { serve } from '@hono/node-server'
-import { config } from 'dotenv'
-import { db } from './db/client.js'
+import { db, serverConfig, getApiInfo, getDatabaseInfo } from './config/index.js'
 import { trackRoute } from './routes/track.js'
 import { metricsRoute } from './routes/metrics.js'
-import type { TDatabase } from './db/client.js'
-
-config()
+import type { TDatabase } from './config/index.js'
 
 type TBindings = {
   db: TDatabase
@@ -16,17 +13,7 @@ type TBindings = {
 
 const app = new Hono<{ Bindings: TBindings }>()
 
-app.use('*', cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'http://localhost:5173',
-    'https://hono-analytics-docs.vercel.app'
-  ],
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-dev-traffic'],
-  credentials: true
-}))
+app.use('*', cors(serverConfig.cors))
 
 app.use('*', logger())
 
@@ -40,15 +27,12 @@ app.get('/', (c) => {
   
   // If JSON is requested, return JSON response
   if (acceptHeader.includes('application/json')) {
-    return c.json({
-      message: 'HONO Analytics API',
-      version: '1.0.0',
-      endpoints: {
-        track: 'POST /track',
-        metrics: 'GET /metrics'
-      }
-    })
+    return c.json(getApiInfo())
   }
+  
+  // Get dynamic information for HTML page
+  const apiInfo = getApiInfo()
+  const dbInfo = getDatabaseInfo()
   
   // Return HTML page for browsers
 	const html = `
@@ -108,6 +92,10 @@ app.get('/', (c) => {
     a { color: #e5e7eb; text-decoration: none; border-bottom: 1px solid #2a2a2a; }
     a:hover { border-bottom-color: #7a7a7a; }
     .muted { color: var(--muted); }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+    .info-item { display: flex; flex-direction: column; gap: 4px; }
+    .info-label { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+    .info-value { font-family: var(--mono); font-size: 14px; color: #e5e7eb; }
   </style>
   <meta name="robots" content="noindex" />
 </head>
@@ -131,6 +119,32 @@ app.get('/', (c) => {
     </section>
 
     <section class="section">
+      <div class="section-title">Server Info</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Environment</span>
+          <span class="info-value">${apiInfo.environment}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Database</span>
+          <span class="info-value">${dbInfo.emoji} ${dbInfo.dialect}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Driver</span>
+          <span class="info-value">${dbInfo.driver}</span>
+        </div>
+        ${dbInfo.host ? `<div class="info-item">
+          <span class="info-label">Host</span>
+          <span class="info-value">${dbInfo.host}:${dbInfo.port}</span>
+        </div>` : ''}
+        ${dbInfo.path ? `<div class="info-item">
+          <span class="info-label">Path</span>
+          <span class="info-value">${dbInfo.path}</span>
+        </div>` : ''}
+      </div>
+    </section>
+
+    <section class="section">
       <div class="section-title">Examples</div>
       <pre class="code">curl -s http://localhost:8080/health</pre>
       <pre class="code">curl -X POST http://localhost:8080/track -H 'Content-Type: application/json' -d '{"event":"pageview","path":"/"}'</pre>
@@ -139,7 +153,7 @@ app.get('/', (c) => {
     <footer class="footer">
       <div>
         Built by <a href="https://github.com/remcostoeten" target="_blank" rel="noreferrer">@remcostoeten</a>
-        with Hono + TypeScript • PostgreSQL (opt‑in SQLite)
+        with Hono + TypeScript • ${dbInfo.displayName}
       </div>
       <div class="muted" style="margin-top:8px">
         Read the <a href="https://hono-analytics-docs.vercel.app" target="_blank" rel="noreferrer">documentation</a>
@@ -185,17 +199,23 @@ app.route('/metrics', metricsRoute)
 export { app }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const port = parseInt(process.env.PORT || '8000')
+  const apiInfo = getApiInfo()
+  const dbInfo = getDatabaseInfo()
   
-  console.log(`🚀 HONO Analytics API starting on port ${port}`)
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🗄️  Database: ${process.env.DATABASE_URL?.split('://')[0] || 'unknown'}`)
+  console.log(`🚀 ${apiInfo.name} starting on port ${serverConfig.port}`)
+  console.log(`📊 Environment: ${apiInfo.environment}`)
+  console.log(`${dbInfo.emoji} Database: ${dbInfo.displayName}`)
+  console.log(`   └─ Driver: ${dbInfo.driver}`)
+  
+  if (!dbInfo.recommended) {
+    console.log(`⚠️  Warning: ${dbInfo.dialect} may not be optimal for this environment`)
+  }
   
   serve({
     fetch: app.fetch,
-    port,
-    hostname: '0.0.0.0'
+    port: serverConfig.port,
+    hostname: serverConfig.hostname
   })
   
-  console.log(`✅ Server running on http://localhost:${port}`)
+  console.log(`✅ Server running on http://localhost:${serverConfig.port}`)
 }

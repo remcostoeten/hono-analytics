@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { eq, sql, desc, gte, lte, and } from 'drizzle-orm'
-import { schema } from '../db/client.js'
+import { schema } from '../config/index.js'
 import { metricsQuerySchema } from '../schemas/index.js'
-import type { TDatabase } from '../db/client.js'
+import type { TDatabase } from '../config/index.js'
 import type { TMetricsResponse } from '../types.js'
 
 type TBindings = {
@@ -20,7 +20,7 @@ metricsRoute.get('/', zValidator('query', metricsQuerySchema), async (c) => {
   }
   
   const database = c.env.db
-  const { startDate, endDate } = c.req.valid('query')
+  const { start_date: startDate, end_date: endDate } = c.req.valid('query')
   
   try {
     const projectRecord = await database
@@ -36,31 +36,28 @@ metricsRoute.get('/', zValidator('query', metricsQuerySchema), async (c) => {
     const [project] = projectRecord
     const projectId = project.id
     
-    // Build where conditions for date filtering
-    const buildWhereConditions = (projectId: string | number) => {
-      const conditions = [eq(schema.pageviews.projectId, projectId)]
-      if (startDate) {
-        conditions.push(gte(schema.pageviews.createdAt, startDate))
-      }
-      if (endDate) {
-        conditions.push(lte(schema.pageviews.createdAt, endDate))
-      }
-      return conditions.length > 1 ? and(...conditions) : conditions[0]
-    }
-    
-    const pageviewsWhereCondition = buildWhereConditions(projectId)
-    
     const pageviewsResult = await database
       .select({ count: sql<number>`count(*)` })
       .from(schema.pageviews)
-      .where(pageviewsWhereCondition)
+      .innerJoin(schema.sessions, eq(schema.pageviews.sessionId, schema.sessions.id))
+      .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
+      .where(and(
+        eq(schema.users.projectId, projectId),
+        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
+        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
+      ))
     
     // For sessions, we need to join with pageviews to respect date filtering
     const sessionsResult = await database
       .select({ count: sql<number>`count(distinct ${schema.sessions.id})` })
       .from(schema.sessions)
       .innerJoin(schema.pageviews, eq(schema.sessions.id, schema.pageviews.sessionId))
-      .where(pageviewsWhereCondition)
+      .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
+      .where(and(
+        eq(schema.users.projectId, projectId),
+        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
+        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
+      ))
     
     // For users, we need to join through sessions and pageviews
     const usersResult = await database
@@ -68,7 +65,11 @@ metricsRoute.get('/', zValidator('query', metricsQuerySchema), async (c) => {
       .from(schema.users)
       .innerJoin(schema.sessions, eq(schema.users.id, schema.sessions.userId))
       .innerJoin(schema.pageviews, eq(schema.sessions.id, schema.pageviews.sessionId))
-      .where(pageviewsWhereCondition)
+      .where(and(
+        eq(schema.users.projectId, projectId),
+        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
+        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
+      ))
     
     const topPages = await database
       .select({
@@ -76,7 +77,13 @@ metricsRoute.get('/', zValidator('query', metricsQuerySchema), async (c) => {
         count: sql<number>`count(*)`
       })
       .from(schema.pageviews)
-      .where(pageviewsWhereCondition)
+      .innerJoin(schema.sessions, eq(schema.pageviews.sessionId, schema.sessions.id))
+      .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
+      .where(and(
+        eq(schema.users.projectId, projectId),
+        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
+        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
+      ))
       .groupBy(schema.pageviews.url)
       .orderBy(desc(sql`count(*)`))
       .limit(5)
@@ -90,7 +97,7 @@ metricsRoute.get('/', zValidator('query', metricsQuerySchema), async (c) => {
       },
       timeseries: [], // TODO: Implement timeseries data
       breakdowns: {
-        topPages: topPages.map(p => ({ url: p.url, views: p.count, avgDuration: 0 })),
+        topPages: topPages.map((p: any) => ({ url: p.url, views: p.count, avgDuration: 0 })),
         countries: [{ country: 'Netherlands', users: 5 }], // TODO: Get real data
         browsers: [{ browser: 'Chrome', users: 10 }], // TODO: Get real data
         devices: [{ device: 'Desktop', users: 8 }] // TODO: Get real data

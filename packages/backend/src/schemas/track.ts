@@ -46,7 +46,7 @@ export const trackHeadersSchema = z.object({
 // Event tracking schema (for future events beyond pageviews)
 export const eventTrackingSchema = z.object({
   name: z.string().min(1),
-  properties: z.record(z.any()).optional(),
+  properties: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().datetime().optional()
 })
 

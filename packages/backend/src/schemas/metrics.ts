@@ -78,7 +78,7 @@ export const metricsResponseSchema = z.object({
       end: z.string()
     }),
     timezone: z.string().optional(),
-    filters: z.record(z.any()).optional()
+    filters: z.record(z.string(), z.any()).optional()
   }).optional()
 })
 

@@ -75,11 +75,12 @@ export type TMetricsResponse = {
 }
 
 export type TEnvironmentVariables = {
-  NODE_ENV: string
+  NODE_ENV: 'development' | 'production' | 'test'
   PORT: string
   DATABASE_URL: string
   DEFAULT_API_KEY: string
-  LOG_LEVEL?: string
+  LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error'
+  CORS_ORIGIN?: string
 }
 
 export type TError = {

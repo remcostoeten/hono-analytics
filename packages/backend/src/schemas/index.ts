@@ -36,7 +36,6 @@ import type {
 export type TrackingPayload = z.infer<typeof trackingPayloadSchema>
 export type MetricsQuery = z.infer<typeof metricsQuerySchema>
 export type MetricsResponse = z.infer<typeof metricsResponseSchema>
-export type CreateProject = z.infer<typeof createProjectSchema>
 export type CreateApiKey = z.infer<typeof createApiKeySchema>
 
 // Validation result types

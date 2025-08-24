@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { eq, and } from 'drizzle-orm'
-import { schema } from '../db/client.js'
+import { schema } from '../config/index.js'
 import { 
   parseUserAgent, 
   isDevTraffic, 
@@ -10,7 +10,7 @@ import {
   parseOrigin 
 } from '../utils/helpers.js'
 import { trackingPayloadSchema } from '../schemas/index.js'
-import type { TDatabase } from '../db/client.js'
+import type { TDatabase } from '../config/index.js'
 
 type TBindings = {
   db: TDatabase
