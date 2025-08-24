@@ -1,0 +1,58 @@
+---
+alwaysApply: true
+---
+
+# Monorepo Conventions
+
+## Workspace Structure
+This project uses pnpm workspaces defined in [pnpm-workspace.yaml](mdc:pnpm-workspace.yaml):
+
+### Package Organization
+- **`packages/`** - Shared libraries and core functionality
+  - `backend/` - Hono API server
+  - `sdk/` - Client-side analytics library
+- **`apps/`** - Applications and examples
+  - `docs/` - Next.js documentation site
+  - `example/` - Vite React example app
+
+## Development Workflow
+
+### Scripts and Commands
+- **Root**: [package.json](mdc:package.json) defines workspace-wide scripts
+- **Development**: [dev.sh](mdc:dev.sh) starts all services in development mode
+- **Example**: [run-example.sh](mdc:run-example.sh) runs the example app
+
+### Package Dependencies
+```json
+// Internal dependencies use workspace protocol
+"dependencies": {
+  "@hono-analytics/sdk": "workspace:*"
+}
+```
+
+## Import Conventions
+
+### ES Modules
+All backend imports use `.js` extensions for ES module compatibility:
+```typescript
+import { schema } from '../db/client.js'
+import { trackingPayloadSchema } from '../schemas/index.js'
+```
+
+### Package Imports
+Use package names for cross-package imports:
+```typescript
+import { AnalyticsProvider } from '@hono-analytics/sdk/react'
+```
+
+## Build and Deployment
+- Each package has its own build configuration
+- TypeScript builds to `dist/` directories
+- Source maps and declaration files are generated
+- [packages/backend/deploy.sh](mdc:packages/backend/deploy.sh) handles backend deployment
+
+## File Naming
+- Use kebab-case for file names
+- Use PascalCase for React components
+- Use camelCase for functions and variables
+- Use SCREAMING_SNAKE_CASE for constants

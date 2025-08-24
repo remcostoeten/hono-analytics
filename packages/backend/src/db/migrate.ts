@@ -1,34 +1,26 @@
-import { config } from 'dotenv'
-
-// Load environment variables first
-config()
-
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { migrate as migrateSqlite } from 'drizzle-orm/better-sqlite3/migrator'
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres'
 import pg from 'pg'
-import { db, getSchema } from './client.js'
 import { eq } from 'drizzle-orm'
-import * as pgSchema from './schema.js'
+import { env, databaseConfig, schema } from '../config/index.js'
 
 async function runMigrations() {
   console.log('Running migrations...')
   
   try {
-    const databaseUrl = process.env.DATABASE_URL
-    
-    if (databaseUrl?.startsWith('sqlite:')) {
-      await migrateSqlite(db as any, { migrationsFolder: './migrations' })
-    } else {
-      // Use PostgreSQL client for migrations (works with both regular PG and Neon)
-      const pgClient = new pg.Pool({
-        connectionString: databaseUrl,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-      })
-      const migrationDb = drizzlePg(pgClient, { schema: pgSchema })
-      await migrate(migrationDb, { migrationsFolder: './migrations' })
-      await pgClient.end()
+    if (databaseConfig.driver !== 'postgresql') {
+      throw new Error('Migrations only support PostgreSQL. Please use a PostgreSQL DATABASE_URL.')
     }
+    
+    // Always use PostgreSQL for migrations in production
+    const pgClient = new pg.Pool({
+      connectionString: databaseConfig.url,
+      ssl: databaseConfig.ssl
+    })
+    
+    const migrationDb = drizzlePg(pgClient, { schema })
+    await migrate(migrationDb, { migrationsFolder: './migrations' })
+    await pgClient.end()
     
     console.log('Migrations completed successfully!')
     
@@ -41,31 +33,30 @@ async function runMigrations() {
 }
 
 async function seedDefaultProject() {
-  const schema = getSchema()
-  const defaultApiKey = process.env.DEFAULT_API_KEY || 'dev-key-12345'
-  const databaseUrl = process.env.DATABASE_URL
+  if (databaseConfig.driver !== 'postgresql') {
+    throw new Error('Seeding only supports PostgreSQL. Please use a PostgreSQL DATABASE_URL.')
+  }
   
   try {
-    // Use PostgreSQL client for seeding to avoid Neon compatibility issues
     const pgClient = new pg.Pool({
-      connectionString: databaseUrl,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      connectionString: databaseConfig.url,
+      ssl: databaseConfig.ssl
     })
-    const seedDb = drizzlePg(pgClient, { schema: pgSchema })
+    const seedDb = drizzlePg(pgClient, { schema })
     
     const existingProject = await seedDb
       .select()
       .from(schema.projects)
-      .where(eq(schema.projects.apiKey, defaultApiKey))
+      .where(eq(schema.projects.apiKey, env.DEFAULT_API_KEY))
       .limit(1)
     
     if (existingProject.length === 0) {
       await seedDb.insert(schema.projects).values({
         name: 'Default Project',
-        apiKey: defaultApiKey
+        apiKey: env.DEFAULT_API_KEY
       })
       
-      console.log(`Seeded default project with API key: ${defaultApiKey}`)
+      console.log(`Seeded default project with API key: ${env.DEFAULT_API_KEY}`)
     } else {
       console.log('Default project already exists')
     }

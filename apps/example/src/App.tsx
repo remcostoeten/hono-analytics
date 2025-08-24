@@ -1,36 +1,72 @@
 import { useState } from 'react'
-import { useAnalytics } from '@hono-analytics/sdk/react'
+import { useAnalyticsActions } from './hooks/useAnalyticsActions'
+import { Dashboard } from './components/Dashboard'
 
 export function App() {
   const [counter, setCounter] = useState(0)
-  const analytics = useAnalytics()
+  const [activeTab, setActiveTab] = useState<'demo' | 'dashboard'>('demo')
+  const { trackCustomEvent, identifyUser, getUserId, getSessionId } = useAnalyticsActions()
 
   async function handleTrackCustom() {
-    await analytics.track({
-      url: '/custom-event',
-      durationMs: Math.floor(Math.random() * 5000)
-    })
+    await trackCustomEvent()
   }
 
   function handleIdentify() {
-    analytics.identify({
-      id: 'test-user-123',
-      country: 'Netherlands',
-      city: 'Amsterdam'
-    })
+    identifyUser()
   }
 
-  const userId = analytics.getUserId()
-  const sessionId = analytics.getSessionId()
+  const userId = getUserId()
+  const sessionId = getSessionId()
 
   return (
     <div style={{ 
       padding: '2rem', 
       fontFamily: 'system-ui, sans-serif',
-      maxWidth: '800px',
+      maxWidth: '1200px',
       margin: '0 auto'
     }}>
       <h1>🔍 HONO Analytics Demo</h1>
+      
+      {/* Tab Navigation */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '1rem', 
+        marginBottom: '2rem',
+        borderBottom: '2px solid #eee'
+      }}>
+        <button
+          onClick={() => setActiveTab('demo')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            fontSize: '1rem',
+            background: activeTab === 'demo' ? '#0066cc' : 'transparent',
+            color: activeTab === 'demo' ? 'white' : '#666',
+            border: 'none',
+            borderBottom: activeTab === 'demo' ? '2px solid #0066cc' : '2px solid transparent',
+            cursor: 'pointer',
+            borderRadius: '4px 4px 0 0'
+          }}
+        >
+          Demo & Testing
+        </button>
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            fontSize: '1rem',
+            background: activeTab === 'dashboard' ? '#0066cc' : 'transparent',
+            color: activeTab === 'dashboard' ? 'white' : '#666',
+            border: 'none',
+            borderBottom: activeTab === 'dashboard' ? '2px solid #0066cc' : '2px solid transparent',
+            cursor: 'pointer',
+            borderRadius: '4px 4px 0 0'
+          }}
+        >
+          Analytics Dashboard
+        </button>
+      </div>
+
+      {activeTab === 'demo' && (<div>
       
       <div style={{
         background: '#f5f5f5',
@@ -122,8 +158,12 @@ export function App() {
           <li>All events include device, browser, and location data</li>
           <li>Debug mode shows events in console</li>
           <li>Check the backend logs to see incoming requests</li>
+          <li>Switch to the "Analytics Dashboard" tab to see collected data</li>
         </ul>
       </div>
+      </div>)}
+
+      {activeTab === 'dashboard' && <Dashboard />}
     </div>
   )
 }

@@ -1,0 +1,17 @@
+---
+description: No code comments
+Code must be self-explanatory and readable without comments.
+ 
+🚫 Not Allowed
+- ❌ No inline comments (e.g., `// filter out inactive users`)
+- ❌ No block comments (e.g., `/* function to get emails */`)
+- ❌ No explanatory comments above functions or variables
+ 
+✅ Allowed
+- ✅ Only comment if absolutely necessary to clarify non-standard or obscure syntax (e.g., bitwise hacks, regex edge cases)
+- ✅ Use clear, descriptive function and variable names instead of comments
+
+We do write JSdoc/docstring for utiliteis,helpers,core,businesslogic,api,database stuff. But only in this format: @name followed by @description of 2 or 3 sentences. If we need a @example block we add it BELOW all code.
+globs:
+alwaysApply: true
+---

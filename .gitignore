@@ -11,6 +11,7 @@ build/
 .env
 .env.local
 .env.production
+.env.deploy
 
 # Database files
 *.sqlite
@@ -39,3 +40,4 @@ pnpm-debug.log*
 # Temporary
 .tmp/
 .cache/
+tmp/

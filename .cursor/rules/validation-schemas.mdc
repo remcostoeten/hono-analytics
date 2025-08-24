@@ -1,0 +1,50 @@
+---
+globs: packages/backend/src/schemas/**/*.ts
+---
+
+# Validation Schema Guidelines
+
+## Schema Architecture
+All validation schemas are organized in [packages/backend/src/schemas/](mdc:packages/backend/src/schemas/):
+
+### File Organization
+- **[common.ts](mdc:packages/backend/src/schemas/common.ts)** - Shared validation patterns (pagination, date ranges, geo data)
+- **[track.ts](mdc:packages/backend/src/schemas/track.ts)** - Analytics tracking validation
+- **[metrics.ts](mdc:packages/backend/src/schemas/metrics.ts)** - Metrics endpoint validation
+- **[auth.ts](mdc:packages/backend/src/schemas/auth.ts)** - Authentication schemas
+- **[index.ts](mdc:packages/backend/src/schemas/index.ts)** - Central exports and type inference
+
+## Schema Composition Patterns
+Use composition over duplication:
+```typescript
+// Reuse common schemas
+export const userTrackingSchema = z.object({
+  id: optionalIdSchema,
+  ...deviceSchema.shape,
+  ...geoSchema.shape
+})
+```
+
+## Type Inference
+TypeScript types are automatically generated:
+```typescript
+// Automatic type generation
+export type TrackingPayload = z.infer<typeof trackingPayloadSchema>
+
+// Safe validation utility
+export function safeValidate<T>(schema: z.ZodSchema<T>, data: unknown): ValidationResult<T>
+```
+
+## Best Practices
+1. **Descriptive Error Messages**: Always provide clear validation error messages
+2. **Optional vs Required**: Use `.optional()` for optional fields, not union with undefined
+3. **Constraints**: Add proper validation constraints (min/max, email, URL formats)
+4. **Composition**: Reuse common patterns from `common.ts`
+5. **Documentation**: Add JSDoc comments for complex validations
+
+## Common Patterns
+- Use `z.coerce.number()` for query parameters that should be numbers
+- Use `z.enum()` for limited string options
+- Use `z.url()` for URL validation
+- Use `z.datetime()` for ISO date strings
+- Use `z.record(z.any())` for flexible object properties

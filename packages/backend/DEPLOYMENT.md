@@ -85,17 +85,60 @@ flyctl secrets set LOG_LEVEL=info
 
 ## Deployment
 
-### Using the Deploy Script
+### Quick Start with Environment File (Recommended)
 
-The easiest way to deploy is using the provided script:
+1. **Copy the environment template**:
+   ```bash
+   cp .env.deploy.example .env.deploy
+   ```
+
+2. **Edit `.env.deploy`** with your configuration:
+   ```bash
+   # Required
+   DATABASE_URL="postgresql://user:pass@host.neon.tech/dbname?sslmode=require"
+   
+   # Optional (defaults shown)
+   CORS_ORIGIN="http://localhost:3000,https://your-app.fly.dev"
+   DEFAULT_API_KEY="auto-generated-if-not-set"
+   LOG_LEVEL="info"
+   ```
+
+3. **Run the deployment**:
+   ```bash
+   ./deploy.sh
+   ```
+
+### Using Environment Variables
+
+You can also pass environment variables directly:
 
 ```bash
+# Minimal deployment
+DATABASE_URL="postgresql://..." ./deploy.sh
+
+# Full configuration
+DATABASE_URL="postgresql://..." \
+CORS_ORIGIN="https://app.com,https://docs.com" \
+DEFAULT_API_KEY="your-secure-key" \
+LOG_LEVEL="debug" \
 ./deploy.sh
+```
+
+### Using deploy-neon.sh Directly
+
+For Neon-specific deployments:
+
+```bash
+# Set your database URL
+export DATABASE_URL="postgresql://..."
+
+# Run the Neon deployment script
+./deploy-neon.sh
 ```
 
 ### Manual Deployment
 
-Alternatively, deploy manually:
+For complete control, deploy manually:
 
 ```bash
 flyctl deploy --local-only

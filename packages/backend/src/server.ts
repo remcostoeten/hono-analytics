@@ -2,13 +2,10 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { serve } from '@hono/node-server'
-import { config } from 'dotenv'
-import { db } from './db/client.js'
+import { db, serverConfig, getApiInfo, getDatabaseInfo } from './config/index.js'
 import { trackRoute } from './routes/track.js'
 import { metricsRoute } from './routes/metrics.js'
-import type { TDatabase } from './db/client.js'
-
-config()
+import type { TDatabase } from './config/index.js'
 
 type TBindings = {
   db: TDatabase
@@ -16,17 +13,7 @@ type TBindings = {
 
 const app = new Hono<{ Bindings: TBindings }>()
 
-app.use('*', cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:3001', 
-    'http://localhost:5173',
-    'https://hono-analytics-docs.vercel.app'
-  ],
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-dev-traffic'],
-  credentials: true
-}))
+app.use('*', cors(serverConfig.cors))
 
 app.use('*', logger())
 
@@ -40,312 +27,166 @@ app.get('/', (c) => {
   
   // If JSON is requested, return JSON response
   if (acceptHeader.includes('application/json')) {
-    return c.json({
-      message: 'HONO Analytics API',
-      version: '1.0.0',
-      endpoints: {
-        track: 'POST /track',
-        metrics: 'GET /metrics'
-      }
-    })
+    return c.json(getApiInfo())
   }
   
+  // Get dynamic information for HTML page
+  const apiInfo = getApiInfo()
+  const dbInfo = getDatabaseInfo()
+  
   // Return HTML page for browsers
-  const html = `
+	const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hono Analytics API</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .logo {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
-        
-        .title {
-            font-size: 32px;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 10px;
-        }
-        
-        .version {
-            color: #718096;
-            font-size: 16px;
-            margin-bottom: 30px;
-        }
-        
-        .status {
-            display: inline-flex;
-            align-items: center;
-            background: #48bb78;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 30px;
-        }
-        
-        .status::before {
-            content: '●';
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .endpoints {
-            background: #f7fafc;
-            border-radius: 12px;
-            padding: 24px;
-            margin: 24px 0;
-            text-align: left;
-        }
-        
-        .endpoints h3 {
-            color: #2d3748;
-            margin-bottom: 16px;
-            font-size: 18px;
-        }
-        
-        .endpoint {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .endpoint:last-child {
-            border-bottom: none;
-        }
-        
-        .method {
-            background: #4299e1;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            min-width: 60px;
-            text-align: center;
-        }
-        
-        .method.post {
-            background: #48bb78;
-        }
-        
-        .method.get {
-            background: #4299e1;
-        }
-        
-        .path {
-            font-family: 'Monaco', 'Menlo', monospace;
-            color: #4a5568;
-            font-weight: 500;
-        }
-        
-        .description {
-            color: #718096;
-            font-size: 14px;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 16px;
-            margin: 24px 0;
-        }
-        
-        .stat {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-            color: #718096;
-            font-size: 14px;
-        }
-        
-        .footer a {
-            color: #4299e1;
-            text-decoration: none;
-        }
-        
-        .footer a:hover {
-            text-decoration: underline;
-        }
-        
-        @media (max-width: 480px) {
-            .container {
-                padding: 24px;
-            }
-            
-            .title {
-                font-size: 24px;
-            }
-            
-            .logo {
-                font-size: 36px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Hono Analytics API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: #0d0d0d;
+      --text: #f5f5f5;
+      --muted: #9ca3af;
+      --border: #1a1a1a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Inter, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .wrapper { max-width: 920px; margin: 0 auto; padding: 64px 24px; }
+    .header { display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-weight: 600; letter-spacing: 0.04em; color: #fff; }
+    .badge { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .hero { margin-top: 56px; }
+    h1 { font-size: 28px; font-weight: 600; }
+    .gradient-text { background: linear-gradient(180deg, #ffffff, #9ca3af); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .subtitle { margin-top: 8px; color: var(--muted); }
+    .section { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .section-title { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; background: linear-gradient(180deg, #d4d4d8, #6b7280); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .endpoint { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .endpoint:last-child { border-bottom: none; }
+    .method { font-weight: 700; font-size: 12px; letter-spacing: 0.05em; min-width: 54px; }
+    .method.get { color: #60a5fa; }
+    .method.post { color: #34d399; }
+    .path { font-family: var(--mono); color: #e5e7eb; }
+    .code { margin-top: 12px; background: #0e0e10; border: 1px solid var(--border); padding: 16px; font-family: var(--mono); font-size: 13px; color: #e5e7eb; white-space: pre-wrap; word-break: break-word; }
+    .code .kw { color: #ffffff; font-weight: 600; }
+    .code .opt { color: #a78bfa; }
+    .code .url { color: #60a5fa; }
+    .code .str { color: #fca5a5; }
+    .code .meth { color: #34d399; }
+    .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+    a { color: #e5e7eb; text-decoration: none; border-bottom: 1px solid #2a2a2a; }
+    a:hover { border-bottom-color: #7a7a7a; }
+    .muted { color: var(--muted); }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+    .info-item { display: flex; flex-direction: column; gap: 4px; }
+    .info-label { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+    .info-value { font-family: var(--mono); font-size: 14px; color: #e5e7eb; }
+  </style>
+  <meta name="robots" content="noindex" />
 </head>
 <body>
-    <div class="container">
-        <div class="logo">📊</div>
-        <h1 class="title">Hono Analytics API</h1>
-        <p class="version">Version 1.0.0</p>
-        <div class="status">API Online</div>
-        
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value">99.9%</div>
-                <div class="stat-label">Uptime</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">&lt;50ms</div>
-                <div class="stat-label">Response Time</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">Neon</div>
-                <div class="stat-label">Database</div>
-            </div>
+  <main class="wrapper">
+    <header class="header">
+      <div class="brand gradient-text">HONO ANALYTICS</div>
+      <div class="badge">API • v1.0.0</div>
+    </header>
+
+    <section class="hero">
+      <h1 class="gradient-text">Minimal, fast analytics API</h1>
+      <p class="subtitle">Just the essentials. Monochrome, minimal.</p>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Endpoints</div>
+      <div class="endpoint"><span class="method get">GET</span><span class="path">/health</span></div>
+      <div class="endpoint"><span class="method post">POST</span><span class="path">/track</span></div>
+      <div class="endpoint"><span class="method get">GET</span><span class="path">/metrics</span></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Server Info</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Environment</span>
+          <span class="info-value">${apiInfo.environment}</span>
         </div>
-        
-        <div class="endpoints">
-            <h3>🛠️ Available Endpoints</h3>
-            
-            <div class="endpoint">
-                <div>
-                    <span class="method get">GET</span>
-                    <span class="path">/health</span>
-                </div>
-                <div class="description">Health check</div>
-            </div>
-            
-            <div class="endpoint">
-                <div>
-                    <span class="method post">POST</span>
-                    <span class="path">/track</span>
-                </div>
-                <div class="description">Track analytics events</div>
-            </div>
-            
-            <div class="endpoint">
-                <div>
-                    <span class="method get">GET</span>
-                    <span class="path">/metrics</span>
-                </div>
-                <div class="description">Retrieve analytics data</div>
-            </div>
+        <div class="info-item">
+          <span class="info-label">Database</span>
+          <span class="info-value">${dbInfo.emoji} ${dbInfo.dialect}</span>
         </div>
-        
-        <div class="footer">
-            <p>🚀 Deployed on <a href="https://fly.io">Fly.io</a> • 🗄️ Powered by <a href="https://neon.tech">Neon PostgreSQL</a></p>
-            <p style="margin-top: 8px; font-size: 12px;">Built with ❤️ using Hono + TypeScript</p>
+        <div class="info-item">
+          <span class="info-label">Driver</span>
+          <span class="info-value">${dbInfo.driver}</span>
         </div>
-    </div>
-    
-    <script>
-        // Add some interactive elements
-        document.addEventListener('DOMContentLoaded', function() {
-            // Animate stats on load
-            const stats = document.querySelectorAll('.stat');
-            stats.forEach((stat, index) => {
-                stat.style.opacity = '0';
-                stat.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    stat.style.transition = 'all 0.6s ease';
-                    stat.style.opacity = '1';
-                    stat.style.transform = 'translateY(0)';
-                }, index * 200);
-            });
-            
-            // Add click handlers for endpoints
-            document.querySelectorAll('.endpoint').forEach(endpoint => {
-                endpoint.style.cursor = 'pointer';
-                endpoint.addEventListener('click', function() {
-                    const path = this.querySelector('.path').textContent;
-                    const method = this.querySelector('.method').textContent;
-                    
-                    if (path === '/health') {
-                        window.open(path, '_blank');
-                    } else {
-                        alert(\`\${method} \${path}\\n\\nThis endpoint requires API key authentication.\\nCheck the documentation for usage examples.\`);
-                    }
-                });
-                
-                endpoint.addEventListener('mouseenter', function() {
-                    this.style.backgroundColor = '#edf2f7';
-                    this.style.transform = 'translateX(4px)';
-                    this.style.transition = 'all 0.2s ease';
-                });
-                
-                endpoint.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = 'transparent';
-                    this.style.transform = 'translateX(0)';
-                });
-            });
-        });
-    </script>
+        ${dbInfo.host ? `<div class="info-item">
+          <span class="info-label">Host</span>
+          <span class="info-value">${dbInfo.host}:${dbInfo.port}</span>
+        </div>` : ''}
+        ${dbInfo.path ? `<div class="info-item">
+          <span class="info-label">Path</span>
+          <span class="info-value">${dbInfo.path}</span>
+        </div>` : ''}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Examples</div>
+      <pre class="code">curl -s http://localhost:8080/health</pre>
+      <pre class="code">curl -X POST http://localhost:8080/track -H 'Content-Type: application/json' -d '{"event":"pageview","path":"/"}'</pre>
+    </section>
+
+    <footer class="footer">
+      <div>
+        Built by <a href="https://github.com/remcostoeten" target="_blank" rel="noreferrer">@remcostoeten</a>
+        with Hono + TypeScript • ${dbInfo.displayName}
+      </div>
+      <div class="muted" style="margin-top:8px">
+        Read the <a href="https://hono-analytics-docs.vercel.app" target="_blank" rel="noreferrer">documentation</a>
+        and view the source code on
+        <a href="https://github.com/remcostoeten/hono-analytics" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    (function(){
+      var blocks = document.querySelectorAll('.code');
+      blocks.forEach(function(pre){
+        var s = pre.textContent;
+        var html = s
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        html = html
+          .replace(/\b(curl)\b/g, '<span class="kw">$1<\/span>')
+          .replace(/(^|\s)(-{1,2}[A-Za-z-]+)/g, function(_, p1, p2){ return p1 + '<span class="opt">' + p2 + '<\/span>'; })
+          .replace(/\b(POST|GET|PUT|DELETE|PATCH)\b/g, '<span class="meth">$1<\/span>')
+          .replace(/(https?:\\\/\\\/[^\s'\"]+)/g, '<span class="url">$1<\/span>')
+          .replace(/('[^']*'|\"[^\"]*\")/g, '<span class="str">$1<\/span>');
+        pre.innerHTML = html;
+      });
+    })();
+  </script>
 </body>
 </html>
-  `
-  
-  return c.html(html)
+	`
+	
+	return c.html(html)
 })
 
 app.get('/health', (c) => {
@@ -358,17 +199,23 @@ app.route('/metrics', metricsRoute)
 export { app }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const port = parseInt(process.env.PORT || '8000')
+  const apiInfo = getApiInfo()
+  const dbInfo = getDatabaseInfo()
   
-  console.log(`🚀 HONO Analytics API starting on port ${port}`)
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🗄️  Database: ${process.env.DATABASE_URL?.split('://')[0] || 'unknown'}`)
+  console.log(`🚀 ${apiInfo.name} starting on port ${serverConfig.port}`)
+  console.log(`📊 Environment: ${apiInfo.environment}`)
+  console.log(`${dbInfo.emoji} Database: ${dbInfo.displayName}`)
+  console.log(`   └─ Driver: ${dbInfo.driver}`)
+  
+  if (!dbInfo.recommended) {
+    console.log(`⚠️  Warning: ${dbInfo.dialect} may not be optimal for this environment`)
+  }
   
   serve({
     fetch: app.fetch,
-    port,
-    hostname: '0.0.0.0'
+    port: serverConfig.port,
+    hostname: serverConfig.hostname
   })
   
-  console.log(`✅ Server running on http://localhost:${port}`)
+  console.log(`✅ Server running on http://localhost:${serverConfig.port}`)
 }

@@ -1,8 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
 import { eq, and } from 'drizzle-orm'
-import { getSchema } from '../db/client.js'
+import { schema } from '../config/index.js'
 import { 
   parseUserAgent, 
   isDevTraffic, 
@@ -10,31 +9,8 @@ import {
   generateSessionId, 
   parseOrigin 
 } from '../utils/helpers.js'
-import type { TDatabase } from '../db/client.js'
-import type { TTrackingPayload } from '../types.js'
-
-const trackSchema = z.object({
-  user: z.object({
-    id: z.string().optional(),
-    device: z.string().optional(),
-    browser: z.string().optional(),
-    os: z.string().optional(),
-    country: z.string().optional(),
-    city: z.string().optional(),
-    lat: z.number().optional(),
-    lng: z.number().optional()
-  }),
-  session: z.object({
-    id: z.string().optional(),
-    referrer: z.string().optional(),
-    origin: z.string().optional()
-  }),
-  pageview: z.object({
-    url: z.string(),
-    timestamp: z.string().optional(),
-    durationMs: z.number().optional()
-  })
-})
+import { trackingPayloadSchema } from '../schemas/index.js'
+import type { TDatabase } from '../config/index.js'
 
 type TBindings = {
   db: TDatabase
@@ -42,7 +18,7 @@ type TBindings = {
 
 export const trackRoute = new Hono<{ Bindings: TBindings }>()
 
-trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
+trackRoute.post('/', zValidator('json', trackingPayloadSchema), async (c) => {
   const payload = c.req.valid('json')
   const apiKey = c.req.header('x-api-key')
   const devHeader = c.req.header('x-dev-traffic')
@@ -53,11 +29,10 @@ trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
     return c.json({ error: 'API key required' }, 401)
   }
   
-  const schema = getSchema()
-  const db = c.env.db
+  const database = c.env.db
   
   try {
-    const project = await db
+    const project = await database
       .select()
       .from(schema.projects)
       .where(eq(schema.projects.apiKey, apiKey))
@@ -77,7 +52,7 @@ trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
     let user = null
     
     if (userId) {
-      const existingUsers = await db
+      const existingUsers = await database
         .select()
         .from(schema.users)
         .where(and(
@@ -89,7 +64,7 @@ trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
       if (existingUsers.length > 0) {
         user = existingUsers[0]
         
-        await db
+        await database
           .update(schema.users)
           .set({ 
             lastSeen: new Date(),
@@ -104,7 +79,7 @@ trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
     if (!user) {
       userId = userId || generateUserId()
       
-      const insertedUsers = await db
+      const insertedUsers = await database
         .insert(schema.users)
         .values({
           id: userId,
@@ -126,8 +101,8 @@ trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
     let sessionId = payload.session.id
     let session = null
     
-    if (sessionId) {
-      const existingSessions = await db
+    if (sessionId && userId) {
+      const existingSessions = await database
         .select()
         .from(schema.sessions)
         .where(and(
@@ -141,10 +116,10 @@ trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
       }
     }
     
-    if (!session) {
+    if (!session && userId) {
       sessionId = sessionId || generateSessionId()
       
-      const insertedSessions = await db
+      const insertedSessions = await database
         .insert(schema.sessions)
         .values({
           id: sessionId,
@@ -157,14 +132,16 @@ trackRoute.post('/', zValidator('json', trackSchema), async (c) => {
       session = insertedSessions[0]
     }
     
-    await db
-      .insert(schema.pageviews)
-      .values({
-        sessionId: sessionId,
-        url: payload.pageview.url,
-        timestamp: payload.pageview.timestamp ? new Date(payload.pageview.timestamp) : new Date(),
-        durationMs: payload.pageview.durationMs
-      })
+    if (sessionId) {
+      await database
+        .insert(schema.pageviews)
+        .values({
+          sessionId: sessionId,
+          url: payload.pageview.url,
+          timestamp: payload.pageview.timestamp ? new Date(payload.pageview.timestamp) : new Date(),
+          durationMs: payload.pageview.durationMs
+        })
+    }
     
     return c.body(null, 204)
     

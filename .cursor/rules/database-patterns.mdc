@@ -1,0 +1,59 @@
+---
+globs: packages/backend/src/db/**/*.ts,packages/backend/migrations/**/*.sql
+---
+
+# Database Patterns and Guidelines
+
+## Schema Management
+Database schemas are managed with Drizzle ORM:
+
+### Schema Files
+- **PostgreSQL**: [packages/backend/src/db/schema.ts](mdc:packages/backend/src/db/schema.ts) - Production schema
+- **SQLite**: [packages/backend/src/db/schema-sqlite.ts](mdc:packages/backend/src/db/schema-sqlite.ts) - Development/testing schema
+- **Client**: [packages/backend/src/db/client.ts](mdc:packages/backend/src/db/client.ts) - Database connection and exports
+
+### Migration System
+- **Migrations**: [packages/backend/migrations/](mdc:packages/backend/migrations/) - SQL migration files
+- **Config**: [packages/backend/drizzle.config.ts](mdc:packages/backend/drizzle.config.ts) - Drizzle configuration
+
+## Query Patterns
+Use Drizzle ORM query builder consistently:
+
+### Basic Queries
+```typescript
+// Select with conditions
+const users = await database
+  .select()
+  .from(schema.users)
+  .where(eq(schema.users.projectId, projectId))
+  .limit(10)
+
+// Joins with proper typing
+const result = await database
+  .select({ count: sql<number>`count(distinct ${schema.users.id})` })
+  .from(schema.users)
+  .innerJoin(schema.sessions, eq(schema.users.id, schema.sessions.userId))
+  .where(conditions)
+```
+
+### Date Filtering
+Always build reusable where conditions:
+```typescript
+const buildWhereConditions = (projectId: string) => {
+  const conditions = [eq(schema.pageviews.projectId, projectId)]
+  if (startDate) conditions.push(gte(schema.pageviews.createdAt, startDate))
+  if (endDate) conditions.push(lte(schema.pageviews.createdAt, endDate))
+  return conditions.length > 1 ? and(...conditions) : conditions[0]
+}
+```
+
+## Type Safety
+- Use `InferSelectModel` and `InferInsertModel` for table types
+- Always type SQL aggregate functions: `sql<number>`count(*)`
+- Export types from schema files for reuse
+
+## Performance Guidelines
+- Use proper indexes on frequently queried columns
+- Use `distinct` for count queries when joining tables
+- Limit result sets with `.limit()` for pagination
+- Use transactions for multi-table operations
