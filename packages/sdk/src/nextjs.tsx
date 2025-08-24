@@ -39,7 +39,7 @@ export async function AnalyticsPageTracker({
     return null
   }
 
-  const headersList = headers()
+  const headersList = await headers()
   const pathname = headersList.get('x-pathname') || headersList.get('x-url')
   const userAgent = headersList.get('user-agent')
   const referer = headersList.get('referer')
@@ -224,8 +224,8 @@ export class NextJSPerformanceTracker {
         
         const metrics = {
           'ttfb': navigation.responseStart - navigation.requestStart, // Time to First Byte
-          'dom-ready': navigation.domContentLoadedEventEnd - navigation.navigationStart,
-          'load-complete': navigation.loadEventEnd - navigation.navigationStart,
+          'dom-ready': navigation.domContentLoadedEventEnd - navigation.fetchStart,
+          'load-complete': navigation.loadEventEnd - navigation.fetchStart,
         }
 
         Object.entries(metrics).forEach(([metric, value]) => {

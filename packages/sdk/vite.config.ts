@@ -15,7 +15,11 @@ export default defineConfig({
       }
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: [
+        'react', 
+        'react-dom',
+        /^next\//  // Externalize all next/* imports
+      ],
       output: {
         globals: {
           react: 'React',

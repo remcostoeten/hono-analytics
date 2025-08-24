@@ -81,3 +81,7 @@ export type TEnvironmentVariables = {
   DEFAULT_API_KEY: string
   LOG_LEVEL?: string
 }
+
+export type TError = {
+  message: string
+}

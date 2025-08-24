@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import { createAnalyticsInstance } from '../analytics.js'
 import type { TAnalyticsOptions, TAnalyticsInstance, TUserData, TPageviewData } from '../types.js'
 
@@ -16,9 +16,17 @@ type TAnalyticsContext = {
   identify: (userData: Partial<TUserData>) => void
   getSessionId: () => string | null
   getUserId: () => string | null
-} | null
+}
 
-const AnalyticsContext = createContext<TAnalyticsContext>(null)
+// Create default context with no-op functions
+const defaultContext: TAnalyticsContext = {
+  track: async () => {},
+  identify: () => {},
+  getSessionId: () => null,
+  getUserId: () => null
+}
+
+const AnalyticsContext = createContext<TAnalyticsContext>(defaultContext)
 
 export function AnalyticsProvider({
   children,
@@ -28,7 +36,8 @@ export function AnalyticsProvider({
   ignoreAnalytics,
   debug
 }: TProps) {
-  const instanceRef = useRef<TAnalyticsInstance | null>(null)
+  const [instance, setInstance] = useState<TAnalyticsInstance | null>(null)
+  const optionsRef = useRef<TAnalyticsOptions | null>(null)
 
   useEffect(() => {
     const options: TAnalyticsOptions = {
@@ -39,22 +48,31 @@ export function AnalyticsProvider({
       debug
     }
 
-    instanceRef.current = createAnalyticsInstance(options)
+    // Only create/recreate if options changed or instance doesn't exist
+    if (!instance || JSON.stringify(optionsRef.current) !== JSON.stringify(options)) {
+      if (instance) {
+        instance.destroy()
+      }
+      
+      const newInstance = createAnalyticsInstance(options)
+      setInstance(newInstance)
+      optionsRef.current = options
+    }
 
     return () => {
-      if (instanceRef.current) {
-        instanceRef.current.destroy()
-        instanceRef.current = null
+      if (instance) {
+        instance.destroy()
+        setInstance(null)
       }
     }
   }, [apiKey, projectId, endpoint, ignoreAnalytics, debug])
 
-  const contextValue: TAnalyticsContext = instanceRef.current ? {
-    track: instanceRef.current.track,
-    identify: instanceRef.current.identify,
-    getSessionId: instanceRef.current.getSessionId,
-    getUserId: instanceRef.current.getUserId
-  } : null
+  const contextValue: TAnalyticsContext = instance ? {
+    track: instance.track,
+    identify: instance.identify,
+    getSessionId: instance.getSessionId,
+    getUserId: instance.getUserId
+  } : defaultContext
 
   return (
     <AnalyticsContext.Provider value={contextValue}>
@@ -65,10 +83,13 @@ export function AnalyticsProvider({
 
 export function useAnalytics() {
   const context = useContext(AnalyticsContext)
-  
+
+  // Since we always provide a default context, this should never be null
+  // But keeping the check for safety
   if (!context) {
-    throw new Error('useAnalytics must be used within an AnalyticsProvider')
+    console.warn('useAnalytics was called outside of an AnalyticsProvider. Using default no-op implementation.')
+    return defaultContext
   }
-  
+
   return context
 }

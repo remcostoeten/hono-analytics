@@ -13,14 +13,12 @@ if (!rootElement) {
 const root = createRoot(rootElement)
 
 root.render(
-  <StrictMode>
-    <AnalyticsProvider
-      apiKey="dev-key-12345"
-      projectId="default-project"
-      endpoint="http://localhost:8000"
-      debug={true}
-    >
-      <App />
-    </AnalyticsProvider>
-  </StrictMode>
+  <AnalyticsProvider
+    apiKey="dev-key-12345"
+    projectId="default-project"
+    endpoint="http://localhost:8000"
+    debug={true}
+  >
+    <App />
+  </AnalyticsProvider>
 )

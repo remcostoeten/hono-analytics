@@ -2,7 +2,6 @@ import {
   sqliteTable, 
   text, 
   integer, 
-  blob, 
   real
 } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'

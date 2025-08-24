@@ -1,0 +1,46 @@
+---
+globs: packages/backend/**/*.ts
+---
+
+# Backend Architecture Guidelines
+
+## Schema-First Development
+The backend uses a **schema-first architecture** with separated validation and business logic:
+
+### Schema Organization
+- **Common Schemas**: [packages/backend/src/schemas/common.ts](mdc:packages/backend/src/schemas/common.ts) - Reusable validation patterns
+- **Route Schemas**: Separate schema files per feature ([track.ts](mdc:packages/backend/src/schemas/track.ts), [metrics.ts](mdc:packages/backend/src/schemas/metrics.ts))
+- **Central Export**: [packages/backend/src/schemas/index.ts](mdc:packages/backend/src/schemas/index.ts) - All schemas and type inference
+
+### Usage Patterns
+```typescript
+// Import schemas from central location
+import { trackingPayloadSchema, metricsQuerySchema } from '../schemas/index.js'
+
+// Use with Hono zValidator
+app.post('/track', zValidator('json', trackingPayloadSchema), handler)
+
+// Type inference is automatic
+const payload = c.req.valid('json') // Fully typed!
+```
+
+## Route Structure
+Routes in [packages/backend/src/routes/](mdc:packages/backend/src/routes/) should:
+- Import schemas from `../schemas/index.js`
+- Focus on business logic only
+- Use proper error handling with structured responses
+- Follow RESTful conventions
+
+## Database Layer
+- **Schema Definition**: [packages/backend/src/db/schema.ts](mdc:packages/backend/src/db/schema.ts) for PostgreSQL
+- **Client Setup**: [packages/backend/src/db/client.ts](mdc:packages/backend/src/db/client.ts) handles connection and exports
+- **Migrations**: Use Drizzle ORM migration system
+
+## Error Handling
+Always use structured error responses:
+```typescript
+return c.json({ error: 'Descriptive message', code: 'ERROR_CODE' }, 500)
+```
+
+## File Extensions
+All backend files use `.js` extensions in imports for ES modules compatibility.

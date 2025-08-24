@@ -5,44 +5,52 @@ import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres'
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3'
 import pg from 'pg'
 import Database from 'better-sqlite3'
-import * as pgSchema from './schema.js'
+import * as schema from './schema.js'
 import * as sqliteSchema from './schema-sqlite.js'
 
-type TDatabaseClient = ReturnType<typeof drizzlePg<typeof pgSchema>> | ReturnType<typeof drizzleSqlite<typeof sqliteSchema>>
+// For production, we only use PostgreSQL
+const isProd = process.env.NODE_ENV === 'production'
+const databaseUrl = process.env.DATABASE_URL
 
-function createDatabaseClient(): TDatabaseClient {
-  const databaseUrl = process.env.DATABASE_URL
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL environment variable is required')
+}
 
+// Production always uses PostgreSQL
+function createProductionClient() {
+  console.log('Using PostgreSQL driver for production')
+  const pgClient = new pg.Pool({
+    connectionString: databaseUrl,
+    ssl: { rejectUnauthorized: false }
+  })
+  return drizzlePg(pgClient, { schema })
+}
+
+// Development can use SQLite or PostgreSQL
+function createDevelopmentClient() {
   if (!databaseUrl) {
     throw new Error('DATABASE_URL environment variable is required')
   }
-
+  
   if (databaseUrl.startsWith('sqlite:')) {
     const dbPath = databaseUrl.replace('sqlite:', '')
     const sqliteClient = new Database(dbPath)
-    return drizzleSqlite(sqliteClient, { schema: sqliteSchema })
+    // Type assertion for development only
+    return drizzleSqlite(sqliteClient, { schema: sqliteSchema }) as any
   }
-
-  // Use standard PostgreSQL driver (works with all PostgreSQL databases including Neon)
-  console.log('Using PostgreSQL driver for Neon database')
+  
   const pgClient = new pg.Pool({
     connectionString: databaseUrl,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: false
   })
-
-  return drizzlePg(pgClient, { schema: pgSchema })
+  return drizzlePg(pgClient, { schema })
 }
 
-export const db = createDatabaseClient()
+// Export the correct client based on environment
+export const db = isProd ? createProductionClient() : createDevelopmentClient()
 
-export function getSchema() {
-  const databaseUrl = process.env.DATABASE_URL
-  
-  if (databaseUrl?.startsWith('sqlite:')) {
-    return sqliteSchema
-  }
-  
-  return pgSchema
-}
+// Export schema directly for production, avoiding union types
+export { schema }
 
-export type TDatabase = typeof db
+// Type export for the database client
+export type TDatabase = ReturnType<typeof createProductionClient>

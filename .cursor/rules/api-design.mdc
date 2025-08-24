@@ -1,0 +1,67 @@
+---
+description: Guidelines for API endpoint design and implementation
+---
+
+# API Design Guidelines
+
+## Endpoint Structure
+The API follows RESTful conventions with these main endpoints:
+
+### Core Analytics Endpoints
+- **`POST /track`** - Track analytics events ([packages/backend/src/routes/track.ts](mdc:packages/backend/src/routes/track.ts))
+- **`GET /metrics`** - Retrieve analytics data ([packages/backend/src/routes/metrics.ts](mdc:packages/backend/src/routes/metrics.ts))
+- **`GET /health`** - Health check endpoint
+
+### Authentication
+All endpoints require API key authentication via `x-api-key` header.
+
+## Request/Response Patterns
+
+### Validation
+Use Zod schemas for all request validation:
+```typescript
+app.post('/track', zValidator('json', trackingPayloadSchema), async (c) => {
+  const payload = c.req.valid('json') // Fully typed
+  // ... business logic
+})
+```
+
+### Error Responses
+Standardized error format:
+```typescript
+return c.json({ 
+  error: 'Descriptive message', 
+  code: 'ERROR_CODE' 
+}, 400)
+```
+
+### Success Responses
+- **204 No Content** for successful operations without response body
+- **200 OK** with JSON for data retrieval
+- Include proper Content-Type headers
+
+## Data Structures
+
+### Tracking Payload
+```typescript
+{
+  user: { id?, device?, browser?, os?, country?, city?, lat?, lng? },
+  session: { id?, referrer?, origin? },
+  pageview: { url, timestamp?, durationMs? }
+}
+```
+
+### Metrics Response
+```typescript
+{
+  totals: { users, sessions, pageviews, avgDuration },
+  timeseries: [{ date, users, sessions, pageviews }],
+  breakdowns: { topPages, countries, browsers, devices }
+}
+```
+
+## Performance Considerations
+- Use database indexes for frequently queried fields
+- Implement proper pagination for large datasets
+- Use connection pooling for database connections
+- Cache frequently accessed data when appropriate

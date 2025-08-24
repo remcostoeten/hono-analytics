@@ -56,19 +56,36 @@ function getConnectionType(): TConnectionType {
 }
 
 export function extractUtmParams(url?: string): TUtmParams {
-  const urlObj = new URL(url || window.location.href)
-  const params: TUtmParams = {}
-  
-  const utmParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
-  
-  for (const param of utmParams) {
-    const value = urlObj.searchParams.get(param)
-    if (value) {
-      params[param] = value
+  try {
+    let urlObj: URL
+    
+    if (!url) {
+      // No URL provided, use current location
+      urlObj = new URL(window.location.href)
+    } else if (url.startsWith('http://') || url.startsWith('https://')) {
+      // Full URL provided
+      urlObj = new URL(url)
+    } else {
+      // Relative URL provided, use current origin as base
+      urlObj = new URL(url, window.location.origin)
     }
+    
+    const params: TUtmParams = {}
+    
+    const utmParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
+    
+    for (const param of utmParams) {
+      const value = urlObj.searchParams.get(param)
+      if (value) {
+        params[param] = value
+      }
+    }
+    
+    return params
+  } catch (error) {
+    console.warn('Failed to extract UTM parameters from URL:', url, error)
+    return {}
   }
-  
-  return params
 }
 
 export function getReferrer(): string {

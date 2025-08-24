@@ -1,0 +1,47 @@
+---
+globs: apps/**/*.tsx,apps/**/*.ts,packages/sdk/**/*.tsx,packages/sdk/**/*.ts
+---
+
+# Frontend Development Patterns
+
+## SDK Architecture
+The [packages/sdk/](mdc:packages/sdk/) provides framework-agnostic analytics:
+
+### Core Modules
+- **Collection**: [packages/sdk/src/core/collect.ts](mdc:packages/sdk/src/core/collect.ts) - Data collection logic
+- **Session**: [packages/sdk/src/core/session.ts](mdc:packages/sdk/src/core/session.ts) - Session management
+- **Storage**: [packages/sdk/src/core/storage.ts](mdc:packages/sdk/src/core/storage.ts) - Local storage utilities
+- **Transport**: [packages/sdk/src/core/transport.ts](mdc:packages/sdk/src/core/transport.ts) - API communication
+
+### Framework Integration
+- **React**: [packages/sdk/src/react/AnalyticsProvider.tsx](mdc:packages/sdk/src/react/AnalyticsProvider.tsx) - Context provider
+- **Next.js**: [packages/sdk/src/nextjs.tsx](mdc:packages/sdk/src/nextjs.tsx) - Next.js specific hooks
+
+## React Patterns
+Use functional components with hooks:
+```typescript
+// Analytics integration
+import { useAnalytics } from '@hono-analytics/sdk/react'
+
+const MyComponent = () => {
+  const { track } = useAnalytics()
+  
+  const handleClick = () => {
+    track('button_click', { button: 'cta' })
+  }
+  
+  return <button onClick={handleClick}>Click me</button>
+}
+```
+
+## Example App Structure
+[apps/example/](mdc:apps/example/) demonstrates SDK usage:
+- **Main App**: [apps/example/src/App.tsx](mdc:apps/example/src/App.tsx) - Shows provider setup
+- **Dashboard**: [apps/example/src/components/Dashboard.tsx](mdc:apps/example/src/components/Dashboard.tsx) - Analytics dashboard
+- **Hooks**: [apps/example/src/hooks/useAnalyticsActions.ts](mdc:apps/example/src/hooks/useAnalyticsActions.ts) - Custom analytics hooks
+
+## TypeScript Standards
+- Use strict TypeScript configuration
+- Export types alongside components
+- Prefer interfaces over types for extensibility
+- Use proper JSX type annotations

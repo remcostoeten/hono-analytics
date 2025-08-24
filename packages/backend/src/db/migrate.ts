@@ -4,12 +4,10 @@ import { config } from 'dotenv'
 config()
 
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { migrate as migrateSqlite } from 'drizzle-orm/better-sqlite3/migrator'
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres'
 import pg from 'pg'
-import { db, getSchema } from './client.js'
 import { eq } from 'drizzle-orm'
-import * as pgSchema from './schema.js'
+import * as schema from './schema.js'
 
 async function runMigrations() {
   console.log('Running migrations...')
@@ -17,18 +15,19 @@ async function runMigrations() {
   try {
     const databaseUrl = process.env.DATABASE_URL
     
-    if (databaseUrl?.startsWith('sqlite:')) {
-      await migrateSqlite(db as any, { migrationsFolder: './migrations' })
-    } else {
-      // Use PostgreSQL client for migrations (works with both regular PG and Neon)
-      const pgClient = new pg.Pool({
-        connectionString: databaseUrl,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-      })
-      const migrationDb = drizzlePg(pgClient, { schema: pgSchema })
-      await migrate(migrationDb, { migrationsFolder: './migrations' })
-      await pgClient.end()
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL is required')
     }
+    
+    // Always use PostgreSQL for migrations in production
+    const pgClient = new pg.Pool({
+      connectionString: databaseUrl,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    })
+    
+    const migrationDb = drizzlePg(pgClient, { schema })
+    await migrate(migrationDb, { migrationsFolder: './migrations' })
+    await pgClient.end()
     
     console.log('Migrations completed successfully!')
     
@@ -41,17 +40,19 @@ async function runMigrations() {
 }
 
 async function seedDefaultProject() {
-  const schema = getSchema()
   const defaultApiKey = process.env.DEFAULT_API_KEY || 'dev-key-12345'
   const databaseUrl = process.env.DATABASE_URL
   
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required')
+  }
+  
   try {
-    // Use PostgreSQL client for seeding to avoid Neon compatibility issues
     const pgClient = new pg.Pool({
       connectionString: databaseUrl,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     })
-    const seedDb = drizzlePg(pgClient, { schema: pgSchema })
+    const seedDb = drizzlePg(pgClient, { schema })
     
     const existingProject = await seedDb
       .select()
