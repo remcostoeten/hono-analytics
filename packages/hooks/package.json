@@ -21,12 +21,28 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
+  "description": "React hooks for building analytics dashboards with Onolythics",
+  "author": "Remco Stoeten",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/remcostoeten/hono-analytics.git",
+    "directory": "packages/hooks"
+  },
+  "bugs": {
+    "url": "https://github.com/remcostoeten/hono-analytics/issues"
+  },
+  "homepage": "https://github.com/remcostoeten/hono-analytics#readme",
   "keywords": [
+    "onolythics",
     "analytics",
     "dashboard",
     "react",
     "hooks",
-    "typescript"
+    "typescript",
+    "hono",
+    "self-hosted",
+    "privacy-focused"
   ],
   "peerDependencies": {
     "react": ">=16.8.0"

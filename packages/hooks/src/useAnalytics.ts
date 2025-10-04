@@ -14,7 +14,8 @@ function formatDateForAPI(date: Date): string {
 async function fetchMetrics(
   endpoint: string,
   apiKey: string,
-  dateRange?: TDateRange
+  dateRange?: TDateRange,
+  signal?: AbortSignal
 ): Promise<TMetricsResponse> {
   const url = new URL(`${endpoint}/metrics`)
   
@@ -28,7 +29,8 @@ async function fetchMetrics(
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': apiKey
-    }
+    },
+    signal
   })
 
   if (!response.ok) {
@@ -55,7 +57,7 @@ export function useAnalytics({ config, dateRange, pollingInterval }: TProps): TH
       setLoading(true)
       setError(null)
 
-      const result = await fetchMetrics(config.endpoint, config.apiKey, dateRange)
+      const result = await fetchMetrics(config.endpoint, config.apiKey, dateRange, abortControllerRef.current.signal)
       setData(result)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {

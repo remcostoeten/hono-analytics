@@ -1,6 +1,6 @@
-# HONO Analytics
+# Onolythics
 
-A self-hosted analytics solution built with HONO, TypeScript, and modern web technologies. Designed to be privacy-focused, lightweight, and developer-friendly.
+A self-hosted, privacy-focused analytics platform built with Hono, TypeScript, and modern web technologies. Edge-ready and developer-friendly.
 
 ## Architecture
 

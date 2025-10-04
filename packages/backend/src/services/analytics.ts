@@ -1,4 +1,4 @@
-import { eq, sql, desc, gte, lte, and, count } from 'drizzle-orm'
+import { eq, sql, desc, gte, lte, and } from 'drizzle-orm'
 import type { TDatabase } from '../config/index.js'
 import { schema } from '../config/index.js'
 
