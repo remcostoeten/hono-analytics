@@ -1,12 +1,15 @@
-# 🔍 Honolytics
+# Honolytics
 
-A complete analytics solution built with Hono.js, featuring:
+A lightweight analytics solution built with Hono.js featuring:
 
-- 📊 **Real-time Analytics Collection** - Track pageviews, users, sessions, and custom events
-- 🎛️ **Hooks** - React hooks for building analytics dashboards with centralized configuration
-- 🚀 **High Performance** - Built on Hono.js for blazing-fast performance
-- 🔒 **Privacy-First** - Self-hosted analytics solution you control
-- 📱 **Multi-Platform** - Works with React, Next.js, and vanilla JavaScript
+- **Real-time Analytics Collection** - Track pageviews, users, sessions, and custom events
+- **Hooks** - React hooks for building analytics dashboards with centralized configuration
+- **High Performance** - Built on Hono.js for blazing-fast performance
+- **Privacy-First** - Self-hosted analytics solution you control
+- **Multi-Platform** - Works with React, Next.js, and vanilla JavaScript
+
+> [!NOTE]
+> Current version (0.1) has no storage included. You bring your own server and database. In upcomming version I will implement various storage solutions.
 
 ## Quick Start
 
@@ -56,18 +59,18 @@ function () {
 }
 ```
 
-## 📦 Packages
+## Packages
 
 ### [honolytics](./packages/hooks/)
 
 React hooks for building analytics s with centralized configuration.
 
 **Key Features:**
-- 🎯 **Centralized Configuration** - Set API config once, use everywhere
-- 🔄 **Backward Compatible** - Existing code still works
-- 📊 **Specialized Hooks** - Individual hooks for different data slices
-- ⚡ **Live Updates** - Built-in polling support
-- 🛡️ **TypeScript** - Full type safety
+- **Centralized Configuration** - Set API config once, use everywhere
+- **Backward Compatible** - Existing code still works
+- **Specialized Hooks** - Individual hooks for different data slices
+- **Live Updates** - Built-in polling support
+- **TypeScript** - Full type safety
 
 **Available Hooks:**
 - `useAnalytics()` - Complete analytics data
@@ -78,10 +81,10 @@ React hooks for building analytics s with centralized configuration.
 - `useBrowsers()` - Browser breakdown
 - `useDevices()` - Device breakdown
 
-[📖 Full Documentation](./packages/hooks/README.md)
+[Full Documentation](./packages/hooks/README.md)
 
 
-## 🛠️ Development
+## Development
 
 This project uses a monorepo structure with:
 - **Bun** for package management
@@ -99,7 +102,7 @@ bun run build
 bun run typecheck
 ```
 
-## 📊 Usage Examples
+## Usage Examples
 
 ### Basic 
 ```tsx
@@ -147,7 +150,7 @@ function Live() {
 ```
 
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feat/amazing-feature`)
@@ -155,10 +158,11 @@ function Live() {
 4. Push to the branch (`git push origin feat/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
 ---
-
-Built with ❤️ using [Hono.js](https://hono.dev) and [React](https://react.dev)
+xxx,
+Remco Stoeten
+<small>Stars are appreciated for my e-penor growth</small>
