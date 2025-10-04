@@ -33,7 +33,7 @@
   "author": "Remco Stoeten <remcostoeten@hotmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/remcostoeten/hono-analytics.git",
+    "url": "https://github.com/remcostoeten/honolytics.git",
     "directory": "packages/hooks"
   },
   "homepage": "https://github.com/remcostoeten/honolytics#readme",
