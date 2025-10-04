@@ -10,6 +10,8 @@ export {
 
 export { HonolyticsProvider, useConfig } from './config/context'
 
+export { initStorage, getAdapter, closeStorage, local, indexdb, sqlite, postgres, turso } from './storage'
+
 export type {
   TMetricsResponse,
   TTimeseriesDatapoint,
@@ -22,3 +24,12 @@ export type {
   TConfig,
   THookResponse
 } from './types'
+
+export type {
+  TEvent,
+  TSession,
+  TMetric,
+  TAdapter,
+  TEventFilter,
+  TStorageConfig
+} from './storage'
