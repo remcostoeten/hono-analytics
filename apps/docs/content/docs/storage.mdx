@@ -1,0 +1,151 @@
+---
+title: Storage Engine
+description: v0.2.0 — Built-in storage adapters for LocalStorage, IndexedDB, Postgres, and Turso.
+---
+
+## Storage Adapters
+
+v0.2.0 introduces a storage engine with adapters for multiple backends. Store and query analytics data without external APIs.
+
+### Available Adapters
+
+- **LocalStorage** — Browser storage, synchronous
+- **IndexedDB** — Browser database, async with indices  
+- **Postgres** — Production SQL database
+- **Turso** — Edge SQLite database
+
+### Setup
+
+Import storage config helpers:
+
+```tsx
+import { local, indexdb, postgres, turso } from 'honolytics/storage'
+```
+
+Configure an adapter:
+
+```tsx
+// Browser storage
+const config = local()
+const config = indexdb()
+
+// SQL databases  
+const config = postgres({ url: 'postgresql://...' })
+const config = turso({ url: 'libsql://...', token: 'xyz' })
+```
+
+Initialize storage:
+
+```tsx
+import { initStorage } from 'honolytics/storage'
+
+await initStorage(config)
+```
+
+### Storage API
+
+All adapters implement the same interface:
+
+```tsx
+// Insert events and sessions
+await adapter.insertEvent(event)
+await adapter.insertSession(session) 
+
+// Query metrics by date range
+const metrics = await adapter.queryMetrics(start, end)
+const totals = await adapter.queryTotals(start, end)
+
+// Query breakdowns
+const pages = await adapter.queryTopPages(start, end, 10)
+const countries = await adapter.queryCountries(start, end, 10)  
+const browsers = await adapter.queryBrowsers(start, end, 10)
+const devices = await adapter.queryDevices(start, end, 10)
+
+// Get everything at once
+const full = await adapter.queryFullMetrics(start, end)
+```
+
+### Event Structure
+
+Events include rich metadata for analytics:
+
+```tsx
+type TEvent = {
+  id: string
+  timestamp: number
+  userId?: string
+  sessionId: string
+  url: string
+  event: string
+  userAgent?: string  // For browser/device detection
+  ip?: string        // For country detection
+  referrer?: string  // Traffic source
+  duration?: number  // Time on page (seconds)
+  meta?: Record<string, unknown>
+}
+```
+
+### Automatic Parsing
+
+Built-in parsers extract analytics data:
+
+- **User Agent** → Browser, device type, OS
+- **IP Address** → Country (extensible with GeoIP services)
+- **Duration** → Average session/page time
+
+### Browser Adapters
+
+LocalStorage and IndexedDB work client-side for testing or offline analytics:
+
+```tsx
+import { LocalAdapter, IndexDBAdapter } from 'honolytics/storage'
+
+const adapter = new LocalAdapter()
+await adapter.connect()
+
+// Now queryFullMetrics() returns complete analytics
+const analytics = await adapter.queryFullMetrics(start, end)
+```
+
+### SQL Adapters
+
+Postgres and Turso adapters handle schema creation and migrations automatically:
+
+```tsx
+import { PostgresAdapter, TursoAdapter } from 'honolytics/storage'
+
+const adapter = new PostgresAdapter({ 
+  url: 'postgresql://user:pass@host:5432/db' 
+})
+await adapter.connect() // Runs migrations
+
+// Production-ready analytics storage
+const analytics = await adapter.queryFullMetrics(start, end)
+```
+
+## Storage vs HTTP Mode
+
+Storage mode bypasses HTTP requests. Hooks read directly from adapters:
+
+```tsx
+<HonolyticsProvider storageMode={true}>
+  <App />
+</HonolyticsProvider>
+```
+
+Same hooks, different data source:
+```tsx
+// Reads from storage instead of HTTP
+const { data } = useAnalytics()
+```
+
+## Migration Path
+
+v0.1 users can gradually migrate:
+
+1. Add storage adapter alongside existing HTTP setup
+2. Capture events to both storage and existing backend  
+3. Switch to storage mode when ready
+4. Remove HTTP endpoint
+
+Storage and HTTP modes use identical data structures.
