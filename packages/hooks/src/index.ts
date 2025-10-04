@@ -6,7 +6,7 @@ export {
   useBrowsers,
   useDevices,
   useTotals
-} from './useMetricSlices'
+} from './use-metric-slices'
 
 export { HonolyticsProvider, useConfig } from './config/context'
 
