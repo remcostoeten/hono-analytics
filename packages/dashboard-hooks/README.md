@@ -79,6 +79,9 @@ type HookOptions = {
     to: Date
   }
   pollingInterval?: number // milliseconds
+  maxRetries?: number // default: 3
+  enableCache?: boolean // default: true
+  cacheTTL?: number // milliseconds, default: 5000
 }
 ```
 
@@ -113,6 +116,21 @@ function LiveDashboard() {
 }
 ```
 
+### Advanced Options
+
+```tsx
+function Dashboard() {
+  const { data, loading, error, refetch } = useAnalytics({
+    pollingInterval: 30000,
+    maxRetries: 5, // Retry up to 5 times with exponential backoff
+    enableCache: true, // Enable request deduplication
+    cacheTTL: 10000 // Cache responses for 10 seconds
+  })
+
+  return <div>Analytics dashboard...</div>
+}
+```
+
 ### Error Handling
 
 ```tsx
@@ -132,6 +150,28 @@ function Dashboard() {
 
   return <div>Analytics dashboard...</div>
 }
+```
+
+### Request Deduplication
+
+By default, the hooks automatically deduplicate identical requests across components:
+
+```tsx
+// Both components share the same request - only 1 API call is made
+function ComponentA() {
+  const { data } = useAnalytics()
+  // ...
+}
+
+function ComponentB() {
+  const { data } = useAnalytics() // Uses cached result
+  // ...
+}
+```
+
+Disable caching if needed:
+```tsx
+const { data } = useAnalytics({ enableCache: false })
 ```
 
 
