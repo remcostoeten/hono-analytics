@@ -9,7 +9,7 @@ type TProps = {
 
 const ConfigContext = createContext<TConfig | null>(null)
 
-export function OnolythicsProvider({ children, apiKey, endpoint }: TProps) {
+export function HonolyticsProvider({ children, apiKey, endpoint }: TProps) {
   const config: TConfig = { apiKey, endpoint }
 
   return (

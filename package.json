@@ -1,5 +1,5 @@
 {
-  "name": "hono-analytics",
+  "name": "honolytics",
   "version": "0.0.0",
   "private": true,
   "workspaces": [
@@ -8,10 +8,11 @@
   ],
   "scripts": {
     "dev": "bun run --filter docs dev",
-    "build": "bun run --filter @hono-analytics/dashboard-hooks build",
+    "build": "bun run --filter @honolytics/hooks build",
     "build:all": "bun run build && bun run --filter docs build"
   },
   "dependencies": {
+    "ci-info": "^4.3.0",
     "create-fumadocs-app": "^15.8.3"
   }
 }

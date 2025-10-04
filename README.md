@@ -1,34 +1,34 @@
-# 🔍 HONO Analytics
+# 🔍 Honolytics
 
 A complete analytics solution built with Hono.js, featuring:
 
 - 📊 **Real-time Analytics Collection** - Track pageviews, users, sessions, and custom events
-- 🎛️ **Dashboard Hooks** - React hooks for building analytics dashboards with centralized configuration
+- 🎛️ ** Hooks** - React hooks for building analytics s with centralized configuration
 - 🚀 **High Performance** - Built on Hono.js for blazing-fast performance
 - 🔒 **Privacy-First** - Self-hosted analytics solution you control
 - 📱 **Multi-Platform** - Works with React, Next.js, and vanilla JavaScript
 
 ## Quick Start
 
-### 1. Install Dashboard Hooks
+### 1. Install  Hooks
 
 ```bash
-bun add @hono-analytics/dashboard-hooks
+bun add @honolytics/hooks
 ```
 
 ### 2. Wrap Your App with Provider
 
 ```tsx
-import { DashboardAnalyticsProvider } from '@hono-analytics/dashboard-hooks'
+import { AnalyticsProvider } from '@honolytics/hooks'
 
 function App() {
   return (
-    <DashboardAnalyticsProvider
+    <AnalyticsProvider
       apiKey="your-api-key-here"
       endpoint="http://localhost:8000"
     >
-      <Dashboard />
-    </DashboardAnalyticsProvider>
+      < />
+    </AnalyticsProvider>
   )
 }
 ```
@@ -36,9 +36,9 @@ function App() {
 ### 3. Use Analytics Hooks
 
 ```tsx
-import { useAnalytics, useTotals } from '@hono-analytics/dashboard-hooks'
+import { useAnalytics, useTotals } from '@honolytics/hooks'
 
-function Dashboard() {
+function () {
   const { data, loading, error } = useAnalytics()
   const { data: totals } = useTotals()
 
@@ -47,7 +47,7 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Analytics Dashboard</h1>
+      <h1>Analytics </h1>
       <p>Users: {totals?.users}</p>
       <p>Sessions: {totals?.sessions}</p>
       <p>Page Views: {totals?.pageviews}</p>
@@ -58,9 +58,9 @@ function Dashboard() {
 
 ## 📦 Packages
 
-### [@hono-analytics/dashboard-hooks](./packages/dashboard-hooks/)
+### [@honolytics/hooks](./packages/hooks/)
 
-React hooks for building analytics dashboards with centralized configuration.
+React hooks for building analytics s with centralized configuration.
 
 **Key Features:**
 - 🎯 **Centralized Configuration** - Set API config once, use everywhere
@@ -78,7 +78,7 @@ React hooks for building analytics dashboards with centralized configuration.
 - `useBrowsers()` - Browser breakdown
 - `useDevices()` - Device breakdown
 
-[📖 Full Documentation](./packages/dashboard-hooks/README.md)
+[📖 Full Documentation](./packages/hooks/README.md)
 
 
 ## 🛠️ Development
@@ -101,9 +101,9 @@ bun run typecheck
 
 ## 📊 Usage Examples
 
-### Basic Dashboard
+### Basic 
 ```tsx
-function SimpleDashboard() {
+function Simple() {
   const { data: totals, loading } = useTotals()
 
   if (loading) return <div>Loading...</div>
@@ -135,9 +135,9 @@ function MonthlyReport() {
 }
 ```
 
-### Live Dashboard with Polling
+### Live  with Polling
 ```tsx
-function LiveDashboard() {
+function Live() {
   const { data } = useAnalytics({
     pollingInterval: 30000 // Refresh every 30 seconds
   })

@@ -1,11 +1,11 @@
-# @hono-analytics/dashboard-hooks
+# @honolytics/hooks
 
-React hooks for analytics dashboard data with centralized configuration.
+React hooks for analytics  data with centralized configuration.
 
 ## Installation
 
 ```bash
-bun add @hono-analytics/dashboard-hooks
+bun add @honolytics/hooks
 ```
 
 ## Usage
@@ -13,16 +13,16 @@ bun add @hono-analytics/dashboard-hooks
 ### 1. Wrap Your App
 
 ```tsx
-import { DashboardAnalyticsProvider } from '@hono-analytics/dashboard-hooks'
+import { AnalyticsProvider } from '@honolytics/hooks'
 
 function App() {
   return (
-    <DashboardAnalyticsProvider
+    <AnalyticsProvider
       apiKey="your-api-key-here"
       endpoint="http://localhost:8000"
     >
-      <Dashboard />
-    </DashboardAnalyticsProvider>
+      < />
+    </AnalyticsProvider>
   )
 }
 ```
@@ -30,9 +30,9 @@ function App() {
 ### 2. Use Analytics Hooks
 
 ```tsx
-import { useAnalytics, useTotals } from '@hono-analytics/dashboard-hooks'
+import { useAnalytics, useTotals } from '@honolytics/hooks'
 
-function Dashboard() {
+function () {
   const { data, loading, error } = useAnalytics()
   const { data: totals } = useTotals()
 
@@ -41,7 +41,7 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Analytics Dashboard</h1>
+      <h1>Analytics </h1>
       <p>Users: {totals?.users}</p>
       <p>Sessions: {totals?.sessions}</p>
       <p>Page Views: {totals?.pageviews}</p>
@@ -52,7 +52,7 @@ function Dashboard() {
 
 ## Available Hooks
 
-All hooks require `DashboardAnalyticsProvider` and support date range filtering and polling:
+All hooks require `AnalyticsProvider` and support date range filtering and polling:
 
 ### Core Hook
 - `useAnalytics(options?)` - Complete analytics data
@@ -66,7 +66,7 @@ All hooks require `DashboardAnalyticsProvider` and support date range filtering 
 - `useDevices(options?)` - Device breakdown
 
 ### Configuration Hook
-- `useDashboardConfig()` - Access current context configuration
+- `useConfig()` - Access current context configuration
 
 ## Hook Options
 
@@ -107,7 +107,7 @@ function MonthlyReport() {
 ### With Polling
 
 ```tsx
-function LiveDashboard() {
+function Live() {
   const { data } = useAnalytics({
     pollingInterval: 30000 // Poll every 30 seconds
   })
@@ -119,7 +119,7 @@ function LiveDashboard() {
 ### Advanced Options
 
 ```tsx
-function Dashboard() {
+function () {
   const { data, loading, error, refetch } = useAnalytics({
     pollingInterval: 30000,
     maxRetries: 5, // Retry up to 5 times with exponential backoff
@@ -127,14 +127,14 @@ function Dashboard() {
     cacheTTL: 10000 // Cache responses for 10 seconds
   })
 
-  return <div>Analytics dashboard...</div>
+  return <div>Analytics ...</div>
 }
 ```
 
 ### Error Handling
 
 ```tsx
-function Dashboard() {
+function () {
   const { data, loading, error, refetch } = useAnalytics()
 
   if (loading) return <div>Loading analytics...</div>
@@ -148,7 +148,7 @@ function Dashboard() {
     )
   }
 
-  return <div>Analytics dashboard...</div>
+  return <div>Analytics ...</div>
 }
 ```
 
@@ -182,11 +182,11 @@ Full TypeScript support with strict typing:
 ```tsx
 import type { 
   TMetricsResponse, 
-  TDashboardConfig,
+  TConfig,
   TDateRange 
-} from '@hono-analytics/dashboard-hooks'
+} from '@honolytics/hooks'
 
-const config: TDashboardConfig = {
+const config: TConfig = {
   apiKey: 'key',
   endpoint: 'http://localhost:8000'
 }
@@ -197,5 +197,5 @@ const config: TDashboardConfig = {
 If you forget to wrap your app in the provider, you'll get a helpful error:
 
 ```
-useAnalytics must be used within DashboardAnalyticsProvider
+useAnalytics must be used within AnalyticsProvider
 ```

@@ -1,23 +1,22 @@
-import { DashboardAnalyticsProvider, useAnalytics, useTotals, useTopPages } from './src/index'
-
+import { HonolyticsProvider, useAnalytics, useTotals, useTopPages } from './src/index'
 // Clean, simple example with centralized configuration
 function App() {
   return (
-    <DashboardAnalyticsProvider
+    <HonolyticsProvider
       apiKey="dev-key-12345"
       endpoint="http://localhost:8000"
     >
       <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-        <h1>🔍 HONO Analytics Demo</h1>
-        <SimpleDashboard />
-        <DetailedDashboard />
+        <h1>🔍 Honolytics Demo</h1>
+        <Simple />
+        <Detailed />
       </div>
-    </DashboardAnalyticsProvider>
+    </HonolyticsProvider>
   )
 }
 
-// Simple dashboard - no config needed
-function SimpleDashboard() {
+// Simple  - no config needed
+function Simple() {
   const { data: totals, loading, error } = useTotals()
 
   if (loading) return <div>Loading totals...</div>
@@ -49,8 +48,8 @@ function SimpleDashboard() {
   )
 }
 
-// Detailed dashboard with live updates
-function DetailedDashboard() {
+// Detailed  with live updates
+function Detailed() {
   const { data: analytics, refetch } = useAnalytics({
     pollingInterval: 30000 // Auto-refresh every 30 seconds
   })

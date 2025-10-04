@@ -3,63 +3,81 @@ title: API Reference
 description: Exact exports, options, and return values.
 ---
 
-Imports
+## Imports
+
 ```ts
 import {
-  DashboardAnalyticsProvider,
-  useDashboardConfig,
+  HonolyticsProvider,
+  useConfig,
   useAnalytics,
   useTotals, useTimeseries, useTopPages, useCountries, useBrowsers, useDevices
-} from '@hono-analytics/dashboard-hooks'
+} from '@honolytics/-hooks'
 ```
 
-Provider
-- DashboardAnalyticsProvider(props)
-  - apiKey: string
-  - endpoint: string
-  - children: ReactNode
-- useDashboardConfig(): { apiKey: string; endpoint: string } | null
+## Provider
 
-Core hook
-- useAnalytics(options?): THookResponse<TMetricsResponse>
-- options
-  - dateRange?: { from: Date; to: Date }
-  - pollingInterval?: number (ms)
-  - maxRetries?: number (default: 3)
-  - enableCache?: boolean (default: true)
-  - cacheTTL?: number (ms, default: 5000)
-- returns
-  - { data: TMetricsResponse | null, loading: boolean, error: string | null, refetch: () => Promise<void> }
+- **HonolyticsProvider(props)**
+  - `apiKey: string`
+  - `endpoint: string`
+  - `children: ReactNode`
+- **useConfig()**: `{ apiKey: string; endpoint: string } | null`
 
-Slice hooks
-- Each returns THookResponse of a specific slice.
-- Options accepted: { dateRange?, pollingInterval? }
-- Hooks
-  - useTotals(options?) -> { users, sessions, pageviews, avgDuration }
-  - useTimeseries(options?) -> { date, users, sessions, pageviews }[]
-  - useTopPages(options?) -> { url, views, avgDuration }[]
-  - useCountries(options?) -> { country, users }[]
-  - useBrowsers(options?) -> { browser, users }[]
-  - useDevices(options?) -> { device, users }[]
+## Core hook
 
-Types
-- TMetricsResponse
-  - totals: { users: number; sessions: number; pageviews: number; avgDuration: number }
-  - timeseries: { date: string; users: number; sessions: number; pageviews: number }[]
-  - breakdowns: {
-      topPages: { url: string; views: number; avgDuration: number }[]
-      countries: { country: string; users: number }[]
-      browsers: { browser: string; users: number }[]
-      devices: { device: string; users: number }[]
-    }
-- THookResponse<T>
-  - { data: T | null; loading: boolean; error: string | null; refetch: () => Promise<void> }
+- **useAnalytics(options?)**: `THookResponse<TMetricsResponse>`
 
-Behavior
-- Provider is required; useAnalytics throws if used without it.
-- Date range is validated (from < to).
-- Polling uses exponential backoff up to maxRetries, then stops.
-- Request deduplication + cache TTL for identical requests (core hook; slice hooks inherit via core).
+**Options:**
+- `dateRange?: { from: Date; to: Date }`
+- `pollingInterval?: number` (ms)
+- `maxRetries?: number` (default: 3)
+- `enableCache?: boolean` (default: true)
+- `cacheTTL?: number` (ms, default: 5000)
 
-See also
-- Server Contract: ./server-contract
+**Returns:**
+- `{ data: TMetricsResponse | null, loading: boolean, error: string | null, refetch: () => Promise<void> }`
+
+## Slice hooks
+
+Each returns `THookResponse` of a specific slice.
+
+**Options accepted:** `{ dateRange?, pollingInterval? }`
+
+**Available hooks:**
+- `useTotals(options?)` → `{ users, sessions, pageviews, avgDuration }`
+- `useTimeseries(options?)` → `{ date, users, sessions, pageviews }[]`
+- `useTopPages(options?)` → `{ url, views, avgDuration }[]`
+- `useCountries(options?)` → `{ country, users }[]`
+- `useBrowsers(options?)` → `{ browser, users }[]`
+- `useDevices(options?)` → `{ device, users }[]`
+
+## Types
+
+**TMetricsResponse:**
+```ts
+{
+  totals: { users: number; sessions: number; pageviews: number; avgDuration: number }
+  timeseries: { date: string; users: number; sessions: number; pageviews: number }[]
+  breakdowns: {
+    topPages: { url: string; views: number; avgDuration: number }[]
+    countries: { country: string; users: number }[]
+    browsers: { browser: string; users: number }[]
+    devices: { device: string; users: number }[]
+  }
+}
+```
+
+**THookResponse\<T\>:**
+```ts
+{ data: T | null; loading: boolean; error: string | null; refetch: () => Promise<void> }
+```
+
+## Behavior
+
+- Provider is required; `useAnalytics` throws if used without it
+- Date range is validated (`from < to`)
+- Polling uses exponential backoff up to `maxRetries`, then stops
+- Request deduplication + cache TTL for identical requests (core hook; slice hooks inherit via core)
+
+## See also
+
+- [Server Contract](./server-contract)

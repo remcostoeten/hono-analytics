@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useDashboardConfig } from './config/dashboard-config-context'
+import { useConfig } from './config/context'
 import { metricsCache } from './utils/request-cache'
 import type { TMetricsResponse, TDateRange, THookResponse } from './types'
 
@@ -87,10 +87,10 @@ export function useAnalytics({
   enableCache = true,
   cacheTTL = 5000
 }: TProps = {}): THookResponse<TMetricsResponse> {
-  const config = useDashboardConfig()
+  const config = useConfig()
 
   if (!config) {
-    throw new Error('useAnalytics must be used within DashboardAnalyticsProvider')
+    throw new Error('useAnalytics must be used within HonolyticsProvider')
   }
 
   // Validate date range on mount and when it changes

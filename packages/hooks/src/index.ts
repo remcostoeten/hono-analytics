@@ -1,4 +1,4 @@
-export { useAnalytics } from './useAnalytics'
+export { useAnalytics } from './use-analytics'
 export {
   useTimeseries,
   useTopPages,
@@ -8,17 +8,17 @@ export {
   useTotals
 } from './useMetricSlices'
 
-export { DashboardAnalyticsProvider, useDashboardConfig } from './config/dashboard-config-context'
+export { HonolyticsProvider, useConfig } from './config/context'
 
 export type {
   TMetricsResponse,
   TTimeseriesDatapoint,
   TTopPage,
-  TCountryBreakdown,
-  TBrowserBreakdown,
-  TDeviceBreakdown,
+  TCountry,
+  TBrowser,
+  TDevice,
   TDateRange,
   TAnalyticsConfig,
-  TDashboardConfig,
+  TConfig,
   THookResponse
 } from './types'

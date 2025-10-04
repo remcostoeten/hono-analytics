@@ -1,21 +1,21 @@
 import { useMemo } from 'react'
-import { useAnalytics } from './useAnalytics'
+import { useAnalytics } from './use-analytics'
 import type {
   TDateRange,
   THookResponse,
   TTimeseriesDatapoint,
   TTopPage,
-  TCountryBreakdown,
-  TBrowserBreakdown,
-  TDeviceBreakdown
-} from './types'
+  TCountry,
+  TDevice,
+  TBrowser,
+  } from './types'
 
-type TBaseProps = {
+type TProps = {
   dateRange?: TDateRange
   pollingInterval?: number
 }
 
-export function useTimeseries({ dateRange, pollingInterval }: TBaseProps = {}): THookResponse<TTimeseriesDatapoint[]> {
+export function useTimeseries({ dateRange, pollingInterval }: TProps = {}): THookResponse<TTimeseriesDatapoint[]> {
   const { data, loading, error, refetch } = useAnalytics({
     dateRange,
     pollingInterval
@@ -28,7 +28,7 @@ export function useTimeseries({ dateRange, pollingInterval }: TBaseProps = {}): 
   return { data: timeseries, loading, error, refetch }
 }
 
-export function useTopPages({ dateRange, pollingInterval }: TBaseProps = {}): THookResponse<TTopPage[]> {
+export function useTopPages({ dateRange, pollingInterval }: TProps = {}): THookResponse<TTopPage[]> {
   const { data, loading, error, refetch } = useAnalytics({
     dateRange,
     pollingInterval
@@ -41,7 +41,7 @@ export function useTopPages({ dateRange, pollingInterval }: TBaseProps = {}): TH
   return { data: topPages, loading, error, refetch }
 }
 
-export function useCountries({ dateRange, pollingInterval }: TBaseProps = {}): THookResponse<TCountryBreakdown[]> {
+export function useCountries({ dateRange, pollingInterval }: TProps = {}): THookResponse<TCountry[]> {
   const { data, loading, error, refetch } = useAnalytics({
     dateRange,
     pollingInterval
@@ -54,7 +54,7 @@ export function useCountries({ dateRange, pollingInterval }: TBaseProps = {}): T
   return { data: countries, loading, error, refetch }
 }
 
-export function useBrowsers({ dateRange, pollingInterval }: TBaseProps = {}): THookResponse<TBrowserBreakdown[]> {
+export function useBrowsers({ dateRange, pollingInterval }: TProps = {}): THookResponse<TBrowser[]> {
   const { data, loading, error, refetch } = useAnalytics({
     dateRange,
     pollingInterval
@@ -67,7 +67,7 @@ export function useBrowsers({ dateRange, pollingInterval }: TBaseProps = {}): TH
   return { data: browsers, loading, error, refetch }
 }
 
-export function useDevices({ dateRange, pollingInterval }: TBaseProps = {}): THookResponse<TDeviceBreakdown[]> {
+export function useDevices({ dateRange, pollingInterval }: TProps = {}): THookResponse<TDevice[]> {
   const { data, loading, error, refetch } = useAnalytics({
     dateRange,
     pollingInterval
@@ -80,7 +80,7 @@ export function useDevices({ dateRange, pollingInterval }: TBaseProps = {}): THo
   return { data: devices, loading, error, refetch }
 }
 
-export function useTotals({ dateRange, pollingInterval }: TBaseProps = {}): THookResponse<{
+export function useTotals({ dateRange, pollingInterval }: TProps = {}): THookResponse<{
   users: number
   sessions: number
   pageviews: number

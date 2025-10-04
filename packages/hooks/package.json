@@ -1,7 +1,7 @@
 {
-  "name": "@hono-analytics/dashboard-hooks",
-  "version": "0.12.0",
-  "description": "React hooks for building analytics dashboards with Hono.js backend. Provides centralized configuration and specialized hooks for metrics, timeseries, and breakdowns.",
+  "name": "@honolytics/hooks",
+  "version": "0.1.0",
+  "description": "React hooks for building analytics s with Hono.js backend. Provides centralized configuration and specialized hooks for metrics, timeseries, and breakdowns.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -22,7 +22,7 @@
     "honojs",
     "react",
     "hooks",
-    "dashboard",
+    "",
     "metrics",
     "monitoring",
     "tracking",
@@ -32,12 +32,12 @@
   "author": "Remco Stoeten <remcostoeten@hotmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/remcostoeten/hono-analytics.git",
-    "directory": "packages/dashboard-hooks"
+    "url": "https://github.com/remcostoeten/honolytics.git",
+    "directory": "packages/hooks"
   },
-  "homepage": "https://github.com/remcostoeten/hono-analytics#readme",
+  "homepage": "https://github.com/remcostoeten/honolytics#readme",
   "bugs": {
-    "url": "https://github.com/remcostoeten/hono-analytics/issues"
+    "url": "https://github.com/remcostoeten/honolytics/issues"
   },
   "peerDependencies": {
     "react": "^18.0.0"

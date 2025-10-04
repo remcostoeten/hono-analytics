@@ -8,9 +8,9 @@ export type TMetricsResponse = {
   timeseries: TTimeseriesDatapoint[]
   breakdowns: {
     topPages: TTopPage[]
-    countries: TCountryBreakdown[]
-    browsers: TBrowserBreakdown[]
-    devices: TDeviceBreakdown[]
+    countries: TCountry[]
+    browsers: TBrowser[]
+    devices: TDevice[]
   }
 }
 
@@ -27,17 +27,17 @@ export type TTopPage = {
   avgDuration: number
 }
 
-export type TCountryBreakdown = {
+export type TCountry = {
   country: string
   users: number
 }
 
-export type TBrowserBreakdown = {
+export type TBrowser = {
   browser: string
   users: number
 }
 
-export type TDeviceBreakdown = {
+export type TDevice = {
   device: string
   users: number
 }
@@ -47,7 +47,7 @@ export type TDateRange = {
   to: Date
 }
 
-export type TAnalyticsConfig = {
+export type TAnalyticsConfig = {    
   apiKey: string
   endpoint: string
 }

@@ -1,0 +1,65 @@
+---
+title: API Reference
+description: Exact exports, options, and return values.
+---
+
+Imports
+```ts
+import {
+  HonolyticsProvider,
+  useConfig,
+  useAnalytics,
+  useTotals, useTimeseries, useTopPages, useCountries, useBrowsers, useDevices
+} from '@honolytics/-hooks'
+```
+
+Provider
+- HonolyticsProvider(props)
+  - apiKey: string
+  - endpoint: string
+  - children: ReactNode
+- useConfig(): { apiKey: string; endpoint: string } | null
+
+Core hook
+- useAnalytics(options?): THookResponse<TMetricsResponse>
+- options
+  - dateRange?: { from: Date; to: Date }
+  - pollingInterval?: number (ms)
+  - maxRetries?: number (default: 3)
+  - enableCache?: boolean (default: true)
+  - cacheTTL?: number (ms, default: 5000)
+- returns
+  - { data: TMetricsResponse | null, loading: boolean, error: string | null, refetch: () => Promise<void> }
+
+Slice hooks
+- Each returns THookResponse of a specific slice.
+- Options accepted: { dateRange?, pollingInterval? }
+- Hooks
+  - useTotals(options?) -> { users, sessions, pageviews, avgDuration }
+  - useTimeseries(options?) -> { date, users, sessions, pageviews }[]
+  - useTopPages(options?) -> { url, views, avgDuration }[]
+  - useCountries(options?) -> { country, users }[]
+  - useBrowsers(options?) -> { browser, users }[]
+  - useDevices(options?) -> { device, users }[]
+
+Types
+- TMetricsResponse
+  - totals: { users: number; sessions: number; pageviews: number; avgDuration: number }
+  - timeseries: { date: string; users: number; sessions: number; pageviews: number }[]
+  - breakdowns: {
+      topPages: { url: string; views: number; avgDuration: number }[]
+      countries: { country: string; users: number }[]
+      browsers: { browser: string; users: number }[]
+      devices: { device: string; users: number }[]
+    }
+- THookResponse<T>
+  - { data: T | null; loading: boolean; error: string | null; refetch: () => Promise<void> }
+
+Behavior
+- Provider is required; useAnalytics throws if used without it.
+- Date range is validated (from < to).
+- Polling uses exponential backoff up to maxRetries, then stops.
+- Request deduplication + cache TTL for identical requests (core hook; slice hooks inherit via core).
+
+See also
+- Server Contract: ./server-contract
