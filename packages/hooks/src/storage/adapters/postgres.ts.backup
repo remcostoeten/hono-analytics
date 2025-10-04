@@ -18,13 +18,8 @@ import { runMigrations, getSchemaVersionSQL, type TMigrationRunner } from '../ut
 
 export type TPostgresConfig = {
   url: string
-  ssl?: boolean | 'require' | 'prefer' | 'allow' // SSL mode - 'require' for Neon/Supabase
+  ssl?: boolean
   max?: number // Connection pool size
-  database?: string // Database name override
-  host?: string // Host override
-  port?: number // Port override
-  username?: string // Username override
-  password?: string // Password override
 }
 
 export class PostgresAdapter implements TAdapter {
@@ -41,20 +36,10 @@ export class PostgresAdapter implements TAdapter {
       const { default: postgres } = await import('postgres')
       
       this.client = postgres(this.config.url, {
-        ssl: this.config.ssl || 'prefer', // Default to prefer SSL for cloud providers
+        ssl: this.config.ssl,
         max: this.config.max || 10,
         idle_timeout: 20,
-        connect_timeout: 10,
-        database: this.config.database,
-        host: this.config.host,
-        port: this.config.port,
-        username: this.config.username,
-        password: this.config.password,
-        // Additional options for cloud providers
-        prepare: false, // Disable prepared statements for better cloud compatibility
-        transform: {
-          undefined: null // Transform undefined to null for better PostgreSQL compatibility
-        }
+        connect_timeout: 10
       })
       
       // Test connection

@@ -94,4 +94,5 @@ export type TStorageConfig = {
   type: 'local' | 'indexdb' | 'sqlite' | 'postgres' | 'turso'
   url?: string
   token?: string
+  ssl?: boolean | 'require' | 'prefer' | 'allow' // SSL mode
 }
