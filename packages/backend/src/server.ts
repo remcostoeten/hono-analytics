@@ -157,9 +157,9 @@ app.get('/', (c) => {
         with Hono + TypeScript • ${dbInfo.displayName}
       </div>
       <div class="muted" style="margin-top:8px">
-        Read the <a href="https://hono-analytics-docs.vercel.app" target="_blank" rel="noreferrer">documentation</a>
+        Read the <a href="https://onolythics-docs.vercel.app" target="_blank" rel="noreferrer">documentation</a>
         and view the source code on
-        <a href="https://github.com/remcostoeten/hono-analytics" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://github.com/remcostoeten/onolythics" target="_blank" rel="noreferrer">GitHub</a>
       </div>
     </footer>
   </main>

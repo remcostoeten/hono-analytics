@@ -1,6 +1,6 @@
 # Neon.tech Setup Guide
 
-Quick guide to set up your Hono Analytics backend with Neon.tech PostgreSQL.
+Quick guide to set up your Onolythics backend with Neon.tech PostgreSQL.
 
 ## Why Neon.tech?
 
@@ -17,7 +17,7 @@ Quick guide to set up your Hono Analytics backend with Neon.tech PostgreSQL.
 1. Go to [neon.tech](https://neon.tech) and sign up/login
 2. Click "Create Project"
 3. Choose your preferred region (Amsterdam for EU users)
-4. Give your project a name like "hono-analytics"
+4. Give your project a name like "onolythics"
 
 ### 2. Create Database & Get Connection String
 

@@ -24,7 +24,7 @@ fi
 # Get app name if it exists
 APP_NAME=$(flyctl status --json 2>/dev/null | jq -r '.Name // ""')
 if [ -z "$APP_NAME" ]; then
-    APP_NAME="hono-analytics-api"
+    APP_NAME="onolythics-api"
 fi
 
 # Set default CORS origins if not provided
@@ -67,7 +67,7 @@ flyctl deploy --local-only
 echo "✅ Deployment complete!"
 
 # Show app URL
-APP_NAME=$(flyctl status --json | jq -r '.Name // "hono-analytics-api"')
+APP_NAME=$(flyctl status --json | jq -r '.Name // "onolythics-api"')
 echo "🌐 Your API is available at: https://${APP_NAME}.fly.dev"
 
 echo "🧪 Test your deployment:"

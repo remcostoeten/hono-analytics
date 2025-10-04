@@ -1,40 +1,70 @@
 ---
-title: HONO Analytics
-description: Self-hosted analytics with TypeScript and HONO
+title: Overview
+description: Self-hosted analytics solution built with Hono, TypeScript, and modern web technologies
 ---
 
-# HONO Analytics
+Onolythics is a privacy-focused, self-hosted analytics platform designed for developers who want complete control over their data.
 
-Self-hosted web analytics focused on users, not events. Built with HONO and TypeScript.
+## What It Offers
 
-## Why HONO Analytics?
+- **User-centric analytics** - Track users, sessions, and pageviews with detailed breakdowns
+- **Real-time data** - All metrics calculated from live database queries, no mock data
+- **Privacy-focused** - Self-hosted solution, your data stays on your servers
+- **Developer-friendly** - React hooks, TypeScript SDK, and REST API
+- **Geographic tracking** - Country, city, and coordinate-level location data
+- **Device detection** - Browser, OS, and device type identification
+- **Session management** - 30-minute inactivity timeout with referrer tracking
+- **Performance metrics** - Time on page, scroll depth, and interaction tracking
 
-- **Privacy-first**: Your data stays on your servers
-- **User-centric**: Track users and sessions, not just events
-- **Developer-friendly**: TypeScript SDK, React provider, vanilla JS support
-- **Lightweight**: ~8KB gzipped, minimal performance impact
-- **Session tracking**: 30-min inactivity timeout, automatic device detection
+## Architecture
 
-## Get Started
+The platform consists of three main packages:
 
-<Cards>
-  <Card title="Getting Started" href="/docs/getting-started" description="Get running in 5 minutes" />
-  <Card title="Examples" href="/docs/examples" description="Copy-paste integration examples" />
-  <Card title="API Reference" href="/docs/api" description="Complete API docs" />
-  <Card title="SDK Guide" href="/docs/sdk" description="React, Next.js, and vanilla JS" />
-</Cards>
+### Backend (`@onolythics/backend`)
 
-## Quick Install
+Hono-based API server with:
+- PostgreSQL/SQLite database support via Drizzle ORM
+- Rate limiting and request validation
+- Multi-project support with API key authentication
+- Optimized queries with proper indexing
+
+### SDK (`@onolythics/sdk`)
+
+Client library for tracking:
+- Automatic pageview detection
+- Custom event tracking
+- React provider and vanilla JS support
+- User identification and session management
+
+### Dashboard Hooks (`@onolythics/hooks`)
+
+React hooks for building dashboards:
+- Type-safe data fetching
+- Real-time updates with polling
+- Granular hooks for specific metrics
+- Automatic cleanup and error handling
+
+## Quick Start
 
 ```bash
-# 1. Start backend
-git clone [repo] && cd hono-analytics && pnpm install
-docker-compose up -d postgres
-./dev.sh
+# Install dependencies
+pnpm install
 
-# 2. Install SDK
-npm install @hono-analytics/sdk
+# Set up database
+cd packages/backend
+cp .env.example .env
+pnpm db:generate && pnpm db:migrate
 
-# 3. Add to your app
-import { AnalyticsProvider } from '@hono-analytics/sdk/react'
+# Start backend
+pnpm dev
 ```
+
+## Next Steps
+
+<Cards>
+  <Card title="Getting Started" href="/docs/getting-started" />
+  <Card title="API Keys" href="/docs/api-keys" />
+  <Card title="Database Schema" href="/docs/database-schema" />
+  <Card title="API Reference" href="/docs/api-reference" />
+  <Card title="Dashboard Hooks" href="/docs/dashboard-hooks" />
+</Cards>

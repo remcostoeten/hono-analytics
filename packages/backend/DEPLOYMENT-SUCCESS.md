@@ -1,4 +1,4 @@
-# 🎉 Hono Analytics Backend - Ready for Deployment!
+# 🎉 Onolythics Backend - Ready for Deployment!
 
 ## ✅ What's Completed
 
@@ -33,7 +33,7 @@ flyctl auth login
 ```bash
 flyctl launch --no-deploy
 ```
-- Choose app name: `hono-analytics-api` (or your preference)
+- Choose app name: `onolythics-api` (or your preference)
 - Choose region: `ams` (Amsterdam - close to your Neon database)
 - Don't create PostgreSQL (we're using Neon)
 

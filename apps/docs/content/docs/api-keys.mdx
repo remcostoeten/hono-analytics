@@ -1,0 +1,300 @@
+---
+title: API Keys
+description: How to generate and manage API keys for authentication
+---
+
+import { ApiKeyGenerator } from '@/components/ApiKeyGenerator'
+
+## What Are API Keys
+
+API keys authenticate requests to your analytics backend. Each project has a unique API key that identifies which data belongs to which project.
+
+## Generate Your API Key
+
+Use the interactive generator below to create a secure random API key:
+
+<ApiKeyGenerator />
+
+## Manual Generation Methods
+
+If you prefer to generate keys manually, here are alternative methods:
+
+### Generating Your First API Key
+
+### Method 1: Using Environment Variable (Quickest)
+
+For development, set a default API key in your environment:
+
+1. Open `packages/backend/.env`
+2. Set the `DEFAULT_API_KEY`:
+
+```bash
+DEFAULT_API_KEY=dev-key-12345
+```
+
+This automatically creates a default project with this key when the backend starts.
+
+### Method 2: Database Seed Script
+
+Create a seed script to generate projects and API keys.
+
+Create `packages/backend/src/db/seed.ts`:
+
+```typescript
+import { db, schema } from '../config/index.js'
+import { randomBytes } from 'crypto'
+
+function generateApiKey(): string {
+  return randomBytes(32).toString('hex')
+}
+
+async function seed() {
+  const apiKey = generateApiKey()
+  
+  const project = await db
+    .insert(schema.projects)
+    .values({
+      name: 'My Website',
+      domain: 'example.com',
+      apiKey,
+      isActive: true
+    })
+    .returning()
+
+  console.log('Project created:')
+  console.log('Name:', project[0].name)
+  console.log('API Key:', project[0].apiKey)
+  console.log('\nAdd this to your .env:')
+  console.log(`DEFAULT_API_KEY=${project[0].apiKey}`)
+}
+
+seed()
+  .then(function () {
+    console.log('\nSeed completed successfully')
+    process.exit(0)
+  })
+  .catch(function (error) {
+    console.error('Seed failed:', error)
+    process.exit(1)
+  })
+```
+
+Run the seed script:
+
+```bash
+cd packages/backend
+pnpm tsx src/db/seed.ts
+```
+
+Copy the generated API key to your `.env` file.
+
+### Method 3: Direct Database Insert
+
+If you have database access, insert directly:
+
+```sql
+INSERT INTO projects (name, domain, api_key, is_active)
+VALUES (
+  'My Website',
+  'example.com',
+  'your-secure-random-key-here',
+  true
+);
+```
+
+Generate a secure random key with:
+
+```bash
+# On Linux/Mac
+openssl rand -hex 32
+
+# Or with Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+## Using Your API Key
+
+### In Client SDK
+
+```tsx
+import { AnalyticsProvider } from '@onolythics/sdk/react'
+
+export function App() {
+  return (
+    <AnalyticsProvider
+      apiKey="your-api-key-here"
+      projectId="your-project-id"
+      endpoint="http://localhost:8000"
+    >
+      {children}
+    </AnalyticsProvider>
+  )
+}
+```
+
+### In Dashboard
+
+```tsx
+import { useAnalytics } from '@onolythics/hooks'
+
+function Dashboard() {
+  const { data } = useAnalytics({
+    config: {
+      apiKey: 'your-api-key-here',
+      endpoint: 'http://localhost:8000'
+    }
+  })
+}
+```
+
+### Environment Variables
+
+Store API keys in environment variables for security:
+
+```bash
+# .env.local
+NEXT_PUBLIC_ANALYTICS_KEY=your-api-key-here
+NEXT_PUBLIC_ANALYTICS_ENDPOINT=http://localhost:8000
+```
+
+Then use them in your code:
+
+```tsx
+const config = {
+  apiKey: process.env.NEXT_PUBLIC_ANALYTICS_KEY!,
+  endpoint: process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT!
+}
+```
+
+## Managing Multiple Projects
+
+Each website or application should have its own project and API key.
+
+### Creating Additional Projects
+
+Using the seed script pattern:
+
+```typescript
+import { db, schema } from '../config/index.js'
+import { randomBytes } from 'crypto'
+
+async function createProject(name: string, domain: string) {
+  const apiKey = randomBytes(32).toString('hex')
+  
+  const project = await db
+    .insert(schema.projects)
+    .values({
+      name,
+      domain,
+      apiKey,
+      isActive: true
+    })
+    .returning()
+
+  console.log(`\nProject: ${name}`)
+  console.log(`API Key: ${project[0].apiKey}`)
+  
+  return project[0]
+}
+
+// Create multiple projects
+Promise.all([
+  createProject('Main Website', 'example.com'),
+  createProject('Blog', 'blog.example.com'),
+  createProject('Docs', 'docs.example.com')
+]).then(function () {
+  process.exit(0)
+})
+```
+
+## API Key Security
+
+### Do's
+
+- Store API keys in environment variables
+- Use different keys for development and production
+- Rotate keys periodically
+- Use `.env.local` for local development (not committed to git)
+
+### Don'ts
+
+- Never commit API keys to version control
+- Don't expose API keys in client-side code (except for tracking endpoints)
+- Don't share API keys across different projects
+- Don't use weak or predictable keys
+
+## Checking Which Projects Exist
+
+Query your database to see all projects and their keys:
+
+```sql
+SELECT id, name, domain, api_key, is_active, created_at
+FROM projects
+ORDER BY created_at DESC;
+```
+
+Or create a helper script:
+
+```typescript
+import { db, schema } from '../config/index.js'
+
+async function listProjects() {
+  const projects = await db
+    .select()
+    .from(schema.projects)
+    .orderBy(schema.projects.createdAt)
+
+  console.log('\nExisting Projects:\n')
+  
+  projects.forEach(function (project) {
+    console.log(`Name: ${project.name}`)
+    console.log(`Domain: ${project.domain || 'N/A'}`)
+    console.log(`API Key: ${project.apiKey}`)
+    console.log(`Active: ${project.isActive}`)
+    console.log(`Created: ${project.createdAt}`)
+    console.log('---')
+  })
+}
+
+listProjects()
+```
+
+## Troubleshooting
+
+### "Invalid API key" Error
+
+1. Check the key matches exactly (no extra spaces)
+2. Verify the project exists in the database
+3. Confirm `is_active` is true
+4. Check you're using the correct endpoint
+
+### "API key required" Error
+
+The `x-api-key` header is missing. Ensure your SDK or HTTP client includes it:
+
+```bash
+curl -H "x-api-key: your-key-here" http://localhost:8000/metrics
+```
+
+### Can't Find My API Key
+
+Query the database:
+
+```sql
+SELECT name, api_key FROM projects;
+```
+
+Or check your `.env` file:
+
+```bash
+grep API_KEY packages/backend/.env
+```
+
+## Quick Start Checklist
+
+1. Set `DEFAULT_API_KEY` in `packages/backend/.env`
+2. Start the backend: `pnpm dev`
+3. Use the same key in your client application
+4. Verify it works: `curl -H "x-api-key: your-key" http://localhost:8000/metrics`
+
+That's it. You now have a working API key.

@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client'
-import { AnalyticsProvider } from '@hono-analytics/sdk/react'
+import { AnalyticsProvider } from '@onolythics/sdk/react'
 import { App } from './App.tsx'
 import './index.css'
 

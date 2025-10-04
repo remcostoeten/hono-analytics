@@ -1,0 +1,482 @@
+---
+title: Dashboard Hooks
+description: React hooks for building analytics dashboards
+---
+
+## Installation
+
+```bash
+pnpm add @onolythics/hooks
+```
+
+## Basic Usage
+
+### useAnalytics
+
+Main hook that fetches all analytics data.
+
+```tsx
+import { useAnalytics } from '@onolythics/hooks'
+
+function Dashboard() {
+  const { data, loading, error, refetch } = useAnalytics({
+    config: {
+      apiKey: 'your-api-key',
+      endpoint: 'http://localhost:8000'
+    },
+    dateRange: {
+      from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      to: new Date()
+    },
+    pollingInterval: 30000 // Optional: refresh every 30 seconds
+  })
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!data) return null
+
+  return (
+    <div>
+      <h1>Analytics</h1>
+      <div>Users: {data.totals.users}</div>
+      <div>Sessions: {data.totals.sessions}</div>
+      <div>Pageviews: {data.totals.pageviews}</div>
+      <button onClick={refetch}>Refresh</button>
+    </div>
+  )
+}
+```
+
+## Granular Hooks
+
+Use specific hooks when you only need particular data.
+
+### useTotals
+
+Fetch summary metrics.
+
+```tsx
+import { useTotals } from '@onolythics/hooks'
+
+function MetricsCards() {
+  const { data, loading } = useTotals({
+    config: {
+      apiKey: 'your-api-key',
+      endpoint: 'http://localhost:8000'
+    }
+  })
+
+  if (!data) return null
+
+  return (
+    <div className="grid grid-cols-4 gap-4">
+      <div>
+        <h3>Users</h3>
+        <p>{data.users}</p>
+      </div>
+      <div>
+        <h3>Sessions</h3>
+        <p>{data.sessions}</p>
+      </div>
+      <div>
+        <h3>Pageviews</h3>
+        <p>{data.pageviews}</p>
+      </div>
+      <div>
+        <h3>Avg Duration</h3>
+        <p>{data.avgDuration}ms</p>
+      </div>
+    </div>
+  )
+}
+```
+
+### useTimeseries
+
+Fetch time-series data for charts.
+
+```tsx
+import { useTimeseries } from '@onolythics/hooks'
+
+function TimeseriesChart() {
+  const { data } = useTimeseries({
+    config: {
+      apiKey: 'your-api-key',
+      endpoint: 'http://localhost:8000'
+    },
+    dateRange: {
+      from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      to: new Date()
+    }
+  })
+
+  return (
+    <div>
+      {data?.map((point) => (
+        <div key={point.date}>
+          {point.date}: {point.pageviews} views, {point.users} users
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+### useTopPages
+
+Fetch most visited pages.
+
+```tsx
+import { useTopPages } from '@onolythics/hooks'
+
+function TopPagesWidget() {
+  const { data } = useTopPages({
+    config: {
+      apiKey: 'your-api-key',
+      endpoint: 'http://localhost:8000'
+    }
+  })
+
+  return (
+    <ul>
+      {data?.map((page) => (
+        <li key={page.url}>
+          <span>{page.url}</span>
+          <span>{page.views} views</span>
+          <span>{page.avgDuration}ms avg</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### useCountries
+
+Fetch geographic breakdown.
+
+```tsx
+import { useCountries } from '@onolythics/hooks'
+
+function CountriesWidget() {
+  const { data } = useCountries({
+    config: {
+      apiKey: 'your-api-key',
+      endpoint: 'http://localhost:8000'
+    }
+  })
+
+  return (
+    <ul>
+      {data?.map((country) => (
+        <li key={country.country}>
+          {country.country}: {country.users} users
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### useBrowsers
+
+Fetch browser breakdown.
+
+```tsx
+import { useBrowsers } from '@onolythics/hooks'
+
+function BrowsersWidget() {
+  const { data } = useBrowsers({
+    config: {
+      apiKey: 'your-api-key',
+      endpoint: 'http://localhost:8000'
+    }
+  })
+
+  return (
+    <ul>
+      {data?.map((browser) => (
+        <li key={browser.browser}>
+          {browser.browser}: {browser.users} users
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### useDevices
+
+Fetch device breakdown.
+
+```tsx
+import { useDevices } from '@onolythics/hooks'
+
+function DevicesWidget() {
+  const { data } = useDevices({
+    config: {
+      apiKey: 'your-api-key',
+      endpoint: 'http://localhost:8000'
+    }
+  })
+
+  return (
+    <ul>
+      {data?.map((device) => (
+        <li key={device.device}>
+          {device.device}: {device.users} users
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+## Configuration
+
+### TAnalyticsConfig
+
+```typescript
+type TAnalyticsConfig = {
+  apiKey: string     // Your project API key
+  endpoint: string   // Backend API URL
+}
+```
+
+### TDateRange
+
+```typescript
+type TDateRange = {
+  from: Date  // Start of date range
+  to: Date    // End of date range
+}
+```
+
+### Hook Response
+
+All hooks return the same response structure:
+
+```typescript
+type THookResponse<T> = {
+  data: T | null           // Fetched data
+  loading: boolean         // Loading state
+  error: string | null     // Error message
+  refetch: () => Promise<void>  // Refetch function
+}
+```
+
+## Real-time Updates
+
+Enable polling for live dashboard updates:
+
+```tsx
+const { data } = useAnalytics({
+  config: {
+    apiKey: 'your-api-key',
+    endpoint: 'http://localhost:8000'
+  },
+  pollingInterval: 30000 // Refresh every 30 seconds
+})
+```
+
+Polling automatically stops when component unmounts.
+
+## Error Handling
+
+```tsx
+function Dashboard() {
+  const { data, error, refetch } = useAnalytics({ config })
+
+  if (error) {
+    return (
+      <div>
+        <p>Error: {error}</p>
+        <button onClick={refetch}>Retry</button>
+      </div>
+    )
+  }
+
+  return <div>{/* Dashboard content */}</div>
+}
+```
+
+## Next.js Compatibility
+
+For Next.js App Router, mark components using hooks as client components:
+
+```tsx
+'use client'
+
+import { useAnalytics } from '@onolythics/hooks'
+
+export function ClientDashboard() {
+  const { data } = useAnalytics({ config })
+  
+  return <div>{/* Dashboard content */}</div>
+}
+```
+
+## Type Definitions
+
+### TMetricsResponse
+
+```typescript
+type TMetricsResponse = {
+  totals: {
+    users: number
+    sessions: number
+    pageviews: number
+    avgDuration: number
+  }
+  timeseries: TTimeseriesDatapoint[]
+  breakdowns: {
+    topPages: TTopPage[]
+    countries: TCountryBreakdown[]
+    browsers: TBrowserBreakdown[]
+    devices: TDeviceBreakdown[]
+  }
+}
+```
+
+### TTimeseriesDatapoint
+
+```typescript
+type TTimeseriesDatapoint = {
+  date: string      // YYYY-MM-DD
+  users: number
+  sessions: number
+  pageviews: number
+}
+```
+
+### TTopPage
+
+```typescript
+type TTopPage = {
+  url: string
+  views: number
+  avgDuration: number
+}
+```
+
+### TCountryBreakdown
+
+```typescript
+type TCountryBreakdown = {
+  country: string
+  users: number
+}
+```
+
+### TBrowserBreakdown
+
+```typescript
+type TBrowserBreakdown = {
+  browser: string
+  users: number
+}
+```
+
+### TDeviceBreakdown
+
+```typescript
+type TDeviceBreakdown = {
+  device: string
+  users: number
+}
+```
+
+## Best Practices
+
+### Memoize Configuration
+
+```tsx
+import { useMemo } from 'react'
+
+function Dashboard() {
+  const config = useMemo(function createConfig() {
+    return {
+      apiKey: process.env.NEXT_PUBLIC_ANALYTICS_KEY!,
+      endpoint: process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT!
+    }
+  }, [])
+
+  const { data } = useAnalytics({ config })
+  
+  return <div>{/* Dashboard content */}</div>
+}
+```
+
+### Date Range Management
+
+Use reducer for complex date range logic:
+
+```tsx
+import { useReducer } from 'react'
+
+type TDateRangeAction = 
+  | { type: 'LAST_7_DAYS' }
+  | { type: 'LAST_30_DAYS' }
+  | { type: 'CUSTOM'; from: Date; to: Date }
+
+function dateRangeReducer(state: TDateRange, action: TDateRangeAction): TDateRange {
+  const now = new Date()
+  
+  switch (action.type) {
+    case 'LAST_7_DAYS':
+      return {
+        from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+        to: now
+      }
+    case 'LAST_30_DAYS':
+      return {
+        from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        to: now
+      }
+    case 'CUSTOM':
+      return { from: action.from, to: action.to }
+    default:
+      return state
+  }
+}
+
+function Dashboard() {
+  const [dateRange, dispatch] = useReducer(dateRangeReducer, {
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    to: new Date()
+  })
+
+  const { data } = useAnalytics({ config, dateRange })
+
+  return (
+    <div>
+      <button onClick={function () { dispatch({ type: 'LAST_7_DAYS' }) }}>
+        Last 7 Days
+      </button>
+      <button onClick={function () { dispatch({ type: 'LAST_30_DAYS' }) }}>
+        Last 30 Days
+      </button>
+    </div>
+  )
+}
+```
+
+### Loading States
+
+```tsx
+function Dashboard() {
+  const { data, loading } = useAnalytics({ config })
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="animate-pulse bg-gray-200 h-32 rounded" />
+        ))}
+      </div>
+    )
+  }
+
+  return <div>{/* Dashboard content */}</div>
+}
+```

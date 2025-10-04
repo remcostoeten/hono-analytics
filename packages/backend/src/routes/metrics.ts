@@ -1,13 +1,33 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { eq, sql, desc, gte, lte, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { schema } from '../config/index.js'
 import { metricsQuerySchema } from '../schemas/index.js'
 import type { TDatabase } from '../config/index.js'
 import type { TMetricsResponse } from '../types.js'
+import {
+  getTotalCounts,
+  getAverageDuration,
+  getTimeseries,
+  getTopPages,
+  getCountriesBreakdown,
+  getBrowsersBreakdown,
+  getDevicesBreakdown
+} from '../services/analytics.js'
 
 type TBindings = {
   db: TDatabase
+}
+
+function calculateDateRange(startDate?: string, endDate?: string): { from: Date; to: Date } {
+  const now = new Date()
+  const defaultTo = now
+  const defaultFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+  return {
+    from: startDate ? new Date(startDate) : defaultFrom,
+    to: endDate ? new Date(endDate) : defaultTo
+  }
 }
 
 export const metricsRoute = new Hono<{ Bindings: TBindings }>()
@@ -35,72 +55,31 @@ metricsRoute.get('/', zValidator('query', metricsQuerySchema), async (c) => {
     
     const [project] = projectRecord
     const projectId = project.id
+    const dateRange = calculateDateRange(startDate, endDate)
     
-    const pageviewsResult = await database
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.pageviews)
-      .innerJoin(schema.sessions, eq(schema.pageviews.sessionId, schema.sessions.id))
-      .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
-      .where(and(
-        eq(schema.users.projectId, projectId),
-        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
-        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
-      ))
-    
-    // For sessions, we need to join with pageviews to respect date filtering
-    const sessionsResult = await database
-      .select({ count: sql<number>`count(distinct ${schema.sessions.id})` })
-      .from(schema.sessions)
-      .innerJoin(schema.pageviews, eq(schema.sessions.id, schema.pageviews.sessionId))
-      .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
-      .where(and(
-        eq(schema.users.projectId, projectId),
-        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
-        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
-      ))
-    
-    // For users, we need to join through sessions and pageviews
-    const usersResult = await database
-      .select({ count: sql<number>`count(distinct ${schema.users.id})` })
-      .from(schema.users)
-      .innerJoin(schema.sessions, eq(schema.users.id, schema.sessions.userId))
-      .innerJoin(schema.pageviews, eq(schema.sessions.id, schema.pageviews.sessionId))
-      .where(and(
-        eq(schema.users.projectId, projectId),
-        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
-        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
-      ))
-    
-    const topPages = await database
-      .select({
-        url: schema.pageviews.url,
-        count: sql<number>`count(*)`
-      })
-      .from(schema.pageviews)
-      .innerJoin(schema.sessions, eq(schema.pageviews.sessionId, schema.sessions.id))
-      .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
-      .where(and(
-        eq(schema.users.projectId, projectId),
-        startDate ? gte(schema.pageviews.timestamp, new Date(startDate)) : sql`true`,
-        endDate ? lte(schema.pageviews.timestamp, new Date(endDate)) : sql`true`
-      ))
-      .groupBy(schema.pageviews.url)
-      .orderBy(desc(sql`count(*)`))
-      .limit(5)
+    const [totals, avgDuration, timeseries, topPages, countries, browsers, devices] = await Promise.all([
+      getTotalCounts(database, projectId, dateRange),
+      getAverageDuration(database, projectId, dateRange),
+      getTimeseries(database, projectId, dateRange),
+      getTopPages(database, projectId, dateRange, 10),
+      getCountriesBreakdown(database, projectId, dateRange, 10),
+      getBrowsersBreakdown(database, projectId, dateRange, 10),
+      getDevicesBreakdown(database, projectId, dateRange, 10)
+    ])
     
     const response: TMetricsResponse = {
       totals: {
-        users: usersResult[0]?.count || 0,
-        sessions: sessionsResult[0]?.count || 0,
-        pageviews: pageviewsResult[0]?.count || 0,
-        avgDuration: 0 // TODO: Calculate average duration
+        users: totals.users,
+        sessions: totals.sessions,
+        pageviews: totals.pageviews,
+        avgDuration
       },
-      timeseries: [], // TODO: Implement timeseries data
+      timeseries,
       breakdowns: {
-        topPages: topPages.map((p: any) => ({ url: p.url, views: p.count, avgDuration: 0 })),
-        countries: [{ country: 'Netherlands', users: 5 }], // TODO: Get real data
-        browsers: [{ browser: 'Chrome', users: 10 }], // TODO: Get real data
-        devices: [{ device: 'Desktop', users: 8 }] // TODO: Get real data
+        topPages,
+        countries,
+        browsers,
+        devices
       }
     }
     

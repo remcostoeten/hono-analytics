@@ -51,28 +51,28 @@ setup_database() {
 # Function to start backend
 start_backend() {
   echo "⚡ Starting backend..."
-  pnpm --filter @hono-analytics/backend dev &
+  pnpm --filter @onolythics/backend dev &
   BACKEND_PID=$!
 }
 
 # Function to start SDK build watch
 start_sdk() {
   echo "📦 Starting SDK build watch..."
-  pnpm --filter @hono-analytics/sdk dev &
+  pnpm --filter @onolythics/sdk dev &
   SDK_PID=$!
 }
 
 # Function to start example app
 start_example() {
   echo "⚛️  Starting example app..."
-  pnpm --filter @hono-analytics/example dev &
+  pnpm --filter @onolythics/example dev &
   EXAMPLE_PID=$!
 }
 
 # Function to start docs app
 start_docs() {
   echo "📚 Starting docs app..."
-  pnpm --filter @hono-analytics/docs dev &
+  pnpm --filter @onolythics/docs dev &
   DOCS_PID=$!
 }
 

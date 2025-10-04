@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-**Hono Analytics** is a self-hosted, privacy-focused analytics monorepo with edge-ready TypeScript backend and client SDKs.
+**Onolythics** is a self-hosted, privacy-focused analytics monorepo with edge-ready TypeScript backend and client SDKs.
 
 ### Architecture Flow
 ```
@@ -34,22 +34,22 @@ pnpm clean        # Clean all build outputs
 
 ### Backend Commands
 ```bash
-pnpm --filter @hono-analytics/backend dev         # Start dev server (tsx --watch)
-pnpm --filter @hono-analytics/backend build       # Compile TypeScript
-pnpm --filter @hono-analytics/backend db:generate # Generate Drizzle migrations
-pnpm --filter @hono-analytics/backend db:migrate  # Apply migrations
-pnpm --filter @hono-analytics/backend db:setup    # Generate + migrate
+pnpm --filter @onolythics/backend dev         # Start dev server (tsx --watch)
+pnpm --filter @onolythics/backend build       # Compile TypeScript
+pnpm --filter @onolythics/backend db:generate # Generate Drizzle migrations
+pnpm --filter @onolythics/backend db:migrate  # Apply migrations
+pnpm --filter @onolythics/backend db:setup    # Generate + migrate
 ```
 
 ### SDK Commands
 ```bash
-pnpm --filter @hono-analytics/sdk dev    # Vite build watch mode
-pnpm --filter @hono-analytics/sdk build  # Build CJS/ESM bundles + types
+pnpm --filter @onolythics/sdk dev    # Vite build watch mode
+pnpm --filter @onolythics/sdk build  # Build CJS/ESM bundles + types
 ```
 
 ### Example App Commands
 ```bash
-pnpm --filter @hono-analytics/example dev  # Start on port 3000
+pnpm --filter @onolythics/example dev  # Start on port 3000
 ```
 
 ## Development Workflow
@@ -106,11 +106,11 @@ Set environment variables in Vercel dashboard.
 
 ### Docker
 ```bash
-docker build -t hono-analytics .
+docker build -t onolythics .
 docker run -p 8000:8000 \
   -e DATABASE_URL="postgresql://..." \
   -e DEFAULT_API_KEY="prod-key" \
-  hono-analytics
+  onolythics
 ```
 
 ## Environment Variables

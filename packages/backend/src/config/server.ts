@@ -52,7 +52,7 @@ function getCorsOrigins(): string[] | string {
   }
   
   return [
-    'https://hono-analytics-docs.vercel.app'
+    'https://onolythics-docs.vercel.app'
   ]
 }
 

@@ -1,0 +1,240 @@
+---
+title: API Reference
+description: Complete API documentation for backend endpoints
+---
+
+## Authentication
+
+All endpoints require an API key in the request header:
+
+```
+x-api-key: your-project-api-key
+```
+
+## Endpoints
+
+### GET /health
+
+Health check endpoint.
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### POST /track
+
+Track analytics events.
+
+**Headers:**
+- `x-api-key` (required): Project API key
+- `x-dev-traffic` (optional): Set to "true" to mark as developer traffic
+- `Content-Type: application/json`
+
+**Request Body:**
+
+```typescript
+{
+  user: {
+    id?: string
+    device?: string
+    browser?: string
+    os?: string
+    country?: string
+    city?: string
+    lat?: number
+    lng?: number
+  }
+  session: {
+    id?: string
+    referrer?: string
+    origin?: string
+  }
+  pageview: {
+    url: string
+    title?: string
+    timestamp?: string
+    durationMs?: number
+    scrollDepth?: number
+    clicks?: number
+    isExit?: boolean
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8000/track \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your-api-key" \
+  -d '{
+    "user": {
+      "device": "desktop",
+      "browser": "Chrome 120",
+      "os": "macOS 14",
+      "country": "NL",
+      "city": "Amsterdam"
+    },
+    "session": {
+      "referrer": "https://google.com"
+    },
+    "pageview": {
+      "url": "https://example.com/page",
+      "title": "Example Page",
+      "durationMs": 5000
+    }
+  }'
+```
+
+**Response:**
+
+- `204 No Content` on success
+- `401 Unauthorized` for invalid API key
+- `400 Bad Request` for malformed data
+- `500 Internal Server Error` for server errors
+
+### GET /metrics
+
+Retrieve aggregated analytics data.
+
+**Headers:**
+- `x-api-key` (required): Project API key
+
+**Query Parameters:**
+- `start_date` (optional): ISO 8601 date string - defaults to 7 days ago
+- `end_date` (optional): ISO 8601 date string - defaults to now
+
+**Example:**
+
+```bash
+curl -H "x-api-key: your-api-key" \
+  "http://localhost:8000/metrics?start_date=2024-01-01T00:00:00.000Z&end_date=2024-01-08T00:00:00.000Z"
+```
+
+**Response:**
+
+```typescript
+{
+  totals: {
+    users: number
+    sessions: number
+    pageviews: number
+    avgDuration: number // milliseconds
+  }
+  timeseries: Array<{
+    date: string // YYYY-MM-DD
+    users: number
+    sessions: number
+    pageviews: number
+  }>
+  breakdowns: {
+    topPages: Array<{
+      url: string
+      views: number
+      avgDuration: number
+    }>
+    countries: Array<{
+      country: string
+      users: number
+    }>
+    browsers: Array<{
+      browser: string
+      users: number
+    }>
+    devices: Array<{
+      device: string
+      users: number
+    }>
+  }
+}
+```
+
+**Example Response:**
+
+```json
+{
+  "totals": {
+    "users": 1250,
+    "sessions": 2100,
+    "pageviews": 5780,
+    "avgDuration": 2340
+  },
+  "timeseries": [
+    {
+      "date": "2024-01-01",
+      "users": 45,
+      "sessions": 67,
+      "pageviews": 142
+    }
+  ],
+  "breakdowns": {
+    "topPages": [
+      {
+        "url": "https://example.com/",
+        "views": 890,
+        "avgDuration": 3200
+      }
+    ],
+    "countries": [
+      {
+        "country": "NL",
+        "users": 456
+      }
+    ],
+    "browsers": [
+      {
+        "browser": "Chrome",
+        "users": 678
+      }
+    ],
+    "devices": [
+      {
+        "device": "desktop",
+        "users": 789
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+
+- `401 Unauthorized`: Invalid or missing API key
+- `500 Internal Server Error`: Server error with error message
+
+## Rate Limiting
+
+Rate limits are applied per IP address:
+
+- `/track` endpoint: 100 requests per 15 minutes
+- `/metrics` endpoint: 30 requests per 15 minutes
+
+Rate limit headers in response:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 99
+X-RateLimit-Reset: 1640995200
+```
+
+## Error Handling
+
+All errors follow this format:
+
+```json
+{
+  "error": "Error message description"
+}
+```
+
+Common error codes:
+
+- `400`: Validation error, check request body
+- `401`: Authentication error, verify API key
+- `429`: Rate limit exceeded
+- `500`: Server error, check logs

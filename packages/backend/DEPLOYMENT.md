@@ -1,6 +1,6 @@
 # Deployment Guide - Fly.io
 
-This guide walks you through deploying the Hono Analytics Backend to Fly.io.
+This guide walks you through deploying the Onolythics Backend to Fly.io.
 
 ## Prerequisites
 
@@ -58,13 +58,13 @@ flyctl secrets set DATABASE_URL="postgresql://username:password@ep-xxx.region.aw
 Create a PostgreSQL database managed by Fly.io:
 
 ```bash
-flyctl postgres create --name hono-analytics-db --region ams
+flyctl postgres create --name onolythics-db --region ams
 ```
 
 Attach it to your application:
 
 ```bash
-flyctl postgres attach --app hono-analytics-api hono-analytics-db
+flyctl postgres attach --app onolythics-api onolythics-db
 ```
 
 **Benefits**: Co-located with your app, minimal latency
@@ -229,14 +229,14 @@ flyctl scale memory 1024
 ### Connect to PostgreSQL
 
 ```bash
-flyctl postgres connect --app hono-analytics-db
+flyctl postgres connect --app onolythics-db
 ```
 
 ### Database Backup
 
 ```bash
-flyctl postgres backup list --app hono-analytics-db
-flyctl postgres backup create --app hono-analytics-db
+flyctl postgres backup list --app onolythics-db
+flyctl postgres backup create --app onolythics-db
 ```
 
 ## Custom Domains

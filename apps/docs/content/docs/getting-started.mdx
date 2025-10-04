@@ -1,70 +1,125 @@
 ---
 title: Getting Started
-description: Get analytics working in 5 minutes
+description: Install and configure Onolythics in your project
 ---
 
-# Getting Started
+import { ApiKeyGenerator } from '@/components/ApiKeyGenerator'
 
-## Quick Start
+## Prerequisites
 
-### 1. Start the Backend
+- Node.js 18 or later
+- pnpm 8 or later
+- PostgreSQL 14+ or SQLite 3.35+
+
+## Installation
+
+### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-org/hono-analytics.git
-cd hono-analytics
+git clone https://github.com/your-org/onolythics.git
+cd onolythics
 pnpm install
-
-# Copy environment file
-cp .env.example .env
-
-# Start with Docker (PostgreSQL)
-docker-compose up -d postgres
-
-# Or use SQLite (no Docker needed)
-export DATABASE_URL="sqlite:./packages/backend/analytics.db"
-
-# Run migrations and start server
-cd packages/backend
-pnpm db:generate && pnpm db:migrate
-cd ../..
-pnpm --filter backend dev
 ```
 
-### 2. Install SDK
+### 2. Database Setup
+
+Choose either PostgreSQL (recommended for production) or SQLite (development).
+
+#### PostgreSQL
 
 ```bash
-npm install @hono-analytics/sdk
+cd packages/backend
+cp .env.example .env
 ```
 
-### 3. Add to Your App
+Edit `.env`:
 
-```tsx path=null start=null
-// Next.js - app/layout.tsx
-import { NextJSAnalyticsProvider } from '@hono-analytics/sdk'
-
-export default function RootLayout({ children }) {
-  return (
-    <NextJSAnalyticsProvider
-      options={{
-        apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY!,
-        projectId: process.env.NEXT_PUBLIC_ANALYTICS_PROJECT_ID!,
-      }}
-    >
-      {children}
-    </NextJSAnalyticsProvider>
-  )
-}
+```bash
+DATABASE_URL=postgresql://username:password@localhost:5432/analytics
+DEFAULT_API_KEY=dev-key-12345
+PORT=8000
 ```
 
-```tsx path=null start=null
-// React - App.tsx
-import { AnalyticsProvider } from '@hono-analytics/sdk/react'
+The `DEFAULT_API_KEY` can be any string for development. For production, generate a secure random key:
 
-function App({ children }) {
+```bash
+openssl rand -hex 32
+```
+
+#### SQLite
+
+```bash
+DATABASE_URL=sqlite:./analytics.db
+DEFAULT_API_KEY=dev-key-12345
+PORT=8000
+```
+
+### 3. Run Migrations
+
+```bash
+cd packages/backend
+pnpm db:generate
+pnpm db:migrate
+```
+
+This creates:
+- `projects` table for multi-tenancy
+- `users` table for visitor tracking
+- `sessions` table for session management
+- `pageviews` table for page tracking
+- `events` table for custom events
+
+### 4. Start Backend
+
+```bash
+pnpm dev
+```
+
+Backend runs on `http://localhost:8000`.
+
+### 5. Get Your API Key
+
+Your API key authenticates requests to your analytics backend.
+
+#### Quick Generation
+
+Generate a secure API key instantly:
+
+<ApiKeyGenerator label="Generate Production API Key" />
+
+Copy the generated key to your `packages/backend/.env` file.
+
+#### Or Use Simple Development Key
+
+For quick testing, use this simple key in your `.env` file:
+
+```bash
+DEFAULT_API_KEY=dev-key-12345
+```
+
+For more details, see the [API Keys guide](/docs/api-keys).
+
+## Tracking Setup
+
+### React/Next.js
+
+Install SDK:
+
+```bash
+pnpm add @onolythics/sdk
+```
+
+Wrap your app:
+
+```tsx
+import { AnalyticsProvider } from '@onolythics/sdk/react'
+
+export function RootLayout({ children }) {
   return (
     <AnalyticsProvider
-      apiKey="your-api-key"
-      projectId="your-project-id"
+      apiKey="dev-key-12345"
+      projectId="default-project"
+      endpoint="http://localhost:8000"
     >
       {children}
     </AnalyticsProvider>
@@ -72,57 +127,80 @@ function App({ children }) {
 }
 ```
 
-```javascript path=null start=null
-// Vanilla JS
-import { initAnalytics, track } from '@hono-analytics/sdk'
+Replace `dev-key-12345` with the API key from your `.env` file.
+
+### Vanilla JavaScript
+
+```js
+import { initAnalytics, track } from '@onolythics/sdk'
 
 const analytics = initAnalytics({
-  apiKey: 'your-api-key',
-  projectId: 'your-project-id'
+  apiKey: 'dev-key-12345',
+  projectId: 'default-project',
+  endpoint: 'http://localhost:8000'
 })
 
-track({ url: '/page-visit' })
+track({
+  url: window.location.href,
+  durationMs: 5000
+})
 ```
 
-### 4. Track Events
+Replace `dev-key-12345` with the API key from your `.env` file.
 
-```tsx path=null start=null
-import { useAnalytics } from '@hono-analytics/sdk'
+## Dashboard Setup
 
-function Button() {
-  const analytics = useAnalytics()
-  
-  const handleClick = () => {
-    analytics.track({ url: '/button/click' })
-  }
-  
-  return <button onClick={handleClick}>Click me</button>
+Install hooks package:
+
+```bash
+pnpm add @onolythics/hooks
+```
+
+Create dashboard component:
+
+```tsx
+'use client'
+
+import { useAnalytics } from '@onolythics/hooks'
+
+export function Dashboard() {
+  const { data, loading, error } = useAnalytics({
+    config: {
+      apiKey: 'dev-key-12345',
+      endpoint: 'http://localhost:8000'
+    },
+    dateRange: {
+      from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      to: new Date()
+    }
+  })
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!data) return null
+
+  return (
+    <div>
+      <h1>Analytics</h1>
+      <div>Total Users: {data.totals.users}</div>
+      <div>Total Pageviews: {data.totals.pageviews}</div>
+    </div>
+  )
 }
 ```
 
-## How It Works
-
-import { DataFlowVisualization } from '@/components/interactive'
-
-<DataFlowVisualization />
-
-## Verify It's Working
-
-✅ Backend health: http://localhost:8000/health  
-✅ Check browser console for analytics logs  
-✅ Query your data: `curl -H "x-api-key: your-key" "http://localhost:8000/metrics"`
+Replace `dev-key-12345` with the API key from your `.env` file.
 
 ## Verification
 
-### 1. Check Backend Health
-
-Visit http://localhost:8000/health or run:
+### Test Backend
 
 ```bash
 curl http://localhost:8000/health
 ```
 
 Expected response:
+
 ```json
 {
   "status": "ok",
@@ -130,43 +208,21 @@ Expected response:
 }
 ```
 
-### 2. Test Analytics Tracking
+### Test Tracking
 
-Visit the example app at http://localhost:3000 and interact with it. Check the browser console for analytics debug logs.
+Visit your app and check the network tab for POST requests to `/track`.
 
-### 3. View Analytics Data
-
-Check your analytics data:
+### Test Metrics
 
 ```bash
-curl -H "x-api-key: your-development-api-key" \
-     "http://localhost:8000/metrics?range=7d"
+curl -H "x-api-key: dev-key-12345" http://localhost:8000/metrics
 ```
+
+Use the same API key from your `.env` file.
 
 ## Next Steps
 
-<Cards>
-  <Card title="React SDK Guide" href="/docs/sdk/react" description="Deep dive into React integration" />
-  <Card title="API Documentation" href="/docs/api" description="Complete API reference" />
-  <Card title="Configuration" href="/docs/configuration" description="Environment variables and settings" />
-  <Card title="Deployment" href="/docs/deployment" description="Production deployment guide" />
-</Cards>
-
-## Troubleshooting
-
-### Common Issues
-
-**Database Connection Failed**
-- Ensure PostgreSQL is running: `docker-compose ps`
-- Check DATABASE_URL in `.env`
-- Try SQLite fallback: `DATABASE_URL="sqlite:./packages/backend/analytics.db"`
-
-**401 Unauthorized**
-- Verify API key matches in backend `.env` and frontend config
-- Check DEFAULT_API_KEY in backend environment
-
-**CORS Errors**
-- Ensure frontend origin is in CORS allowlist (see `packages/backend/src/server.ts`)
-- Check that both frontend and backend are running
-
-For more troubleshooting, see the [Troubleshooting Guide](/docs/troubleshooting).
+- [Configure environment variables](/docs/configuration)
+- [Understand database schema](/docs/database-schema)
+- [Deploy to production](/docs/deployment)
+- [View examples](/docs/examples)

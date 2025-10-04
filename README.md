@@ -27,8 +27,8 @@ This is a monorepo containing:
 
 ```bash
 # Clone and install
-git clone https://github.com/your-org/hono-analytics.git
-cd hono-analytics
+git clone https://github.com/your-org/onolythics.git
+cd onolythics
 pnpm install
 
 # Start development environment (requires Docker for PostgreSQL)
@@ -79,7 +79,7 @@ This will start:
 #### React/Next.js
 
 ```tsx
-import { AnalyticsProvider } from '@hono-analytics/sdk/react'
+import { AnalyticsProvider } from '@onolythics/sdk/react'
 
 export function App() {
   return (
@@ -95,7 +95,7 @@ export function App() {
 }
 
 // In your components
-import { useAnalytics } from '@hono-analytics/sdk/react'
+import { useAnalytics } from '@onolythics/sdk/react'
 
 function MyComponent() {
   const analytics = useAnalytics()
@@ -126,7 +126,7 @@ function MyComponent() {
 #### Vanilla JavaScript
 
 ```js
-import { initAnalytics, track, identify } from '@hono-analytics/sdk'
+import { initAnalytics, track, identify } from '@onolythics/sdk'
 
 // Initialize
 const analytics = initAnalytics({
@@ -339,7 +339,7 @@ type TProps = {
 ### Project Structure
 
 ```
-hono-analytics/
+onolythics/
 ├── backend/           # HONO API server
 │   ├── src/
 │   │   ├── db/        # Database schema and client

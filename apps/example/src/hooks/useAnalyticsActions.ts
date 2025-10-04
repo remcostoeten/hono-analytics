@@ -1,4 +1,4 @@
-import { useAnalytics } from '@hono-analytics/sdk/react'
+import { useAnalytics } from '@onolythics/sdk/react'
 
 export function useAnalyticsActions() {
   const analytics = useAnalytics()

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
-    container_name: hono-analytics-app
+    container_name: onolythics-app
     ports:
       - "8000:8000"
     environment:
@@ -18,7 +18,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: hono-analytics-postgres
+    container_name: onolythics-postgres
     environment:
       POSTGRES_DB: analytics
       POSTGRES_USER: analytics_user
