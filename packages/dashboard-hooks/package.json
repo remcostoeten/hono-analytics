@@ -1,0 +1,59 @@
+{
+  "name": "@hono-analytics/dashboard-hooks",
+  "version": "1.0.0",
+  "description": "React hooks for building analytics dashboards with Hono.js backend. Provides centralized configuration and specialized hooks for metrics, timeseries, and breakdowns.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "prepublishOnly": "bun run build && bun run typecheck"
+  },
+  "keywords": [
+    "analytics",
+    "hono",
+    "honojs",
+    "react",
+    "hooks",
+    "dashboard",
+    "metrics",
+    "monitoring",
+    "tracking",
+    "statistics",
+    "react-hooks"
+  ],
+  "author": "Remco Stoeten <remcostoeten@hotmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/remcostoeten/hono-analytics.git",
+    "directory": "packages/dashboard-hooks"
+  },
+  "homepage": "https://github.com/remcostoeten/hono-analytics#readme",
+  "bugs": {
+    "url": "https://github.com/remcostoeten/hono-analytics/issues"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
+}

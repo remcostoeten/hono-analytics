@@ -1,0 +1,31 @@
+# Source files (we ship dist/ only)
+src/
+*.ts
+!*.d.ts
+
+# Development files
+example-usage.tsx
+tsconfig.json
+bun.lock
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Testing
+coverage
+*.test.*
+*.spec.*
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation (optional - uncomment if you don't want to ship these)
+# CHANGELOG.md
+# README.md
