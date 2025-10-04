@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useAnalyticsActions } from './hooks/useAnalyticsActions'
 import { Dashboard } from './components/Dashboard'
+import { IntegrationTest } from './components/IntegrationTest'
 
 export function App() {
   const [counter, setCounter] = useState(0)
-  const [activeTab, setActiveTab] = useState<'demo' | 'dashboard'>('demo')
+  const [activeTab, setActiveTab] = useState<'demo' | 'dashboard' | 'test'>('test')
   const { trackCustomEvent, identifyUser, getUserId, getSessionId } = useAnalyticsActions()
 
   async function handleTrackCustom() {
@@ -63,6 +64,21 @@ export function App() {
           }}
         >
           Analytics Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab('test')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            fontSize: '1rem',
+            background: activeTab === 'test' ? '#0066cc' : 'transparent',
+            color: activeTab === 'test' ? 'white' : '#666',
+            border: 'none',
+            borderBottom: activeTab === 'test' ? '2px solid #0066cc' : '2px solid transparent',
+            cursor: 'pointer',
+            borderRadius: '4px 4px 0 0'
+          }}
+        >
+          🧪 Integration Test
         </button>
       </div>
 
@@ -164,6 +180,7 @@ export function App() {
       </div>)}
 
       {activeTab === 'dashboard' && <Dashboard />}
+      {activeTab === 'test' && <IntegrationTest />}
     </div>
   )
 }

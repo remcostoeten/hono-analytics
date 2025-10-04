@@ -63,6 +63,9 @@ importers:
 
   apps/example:
     dependencies:
+      '@onolythics/hooks':
+        specifier: workspace:*
+        version: link:../../packages/hooks
       '@onolythics/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
