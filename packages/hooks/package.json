@@ -1,6 +1,6 @@
 {
   "name": "honolytics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React hooks for building analytics dashboards with a Hono.js backend. Centralized config, timeseries and breakdown slices, polling, and caching.",
   "type": "module",
   "main": "dist/index.js",
