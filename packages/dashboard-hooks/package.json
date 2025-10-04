@@ -1,6 +1,6 @@
 {
   "name": "@hono-analytics/dashboard-hooks",
-  "version": "1.1.0",
+  "version": "0.12.0",
   "description": "React hooks for building analytics dashboards with Hono.js backend. Provides centralized configuration and specialized hooks for metrics, timeseries, and breakdowns.",
   "type": "module",
   "main": "dist/index.js",
