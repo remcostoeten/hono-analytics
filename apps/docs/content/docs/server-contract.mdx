@@ -1,0 +1,64 @@
+---
+title: Server Contract
+description: What the client expects from your Hono server.
+---
+
+Version
+- v0.1 is client-only. You bring your own database and server.
+
+Endpoint
+- GET {endpoint}/metrics
+
+Headers
+- Content-Type: application/json
+- x-api-key: string (required)
+
+Query params (optional)
+- start_date: ISO 8601 string (from.toISOString())
+- end_date: ISO 8601 string (to.toISOString())
+
+Response shape
+```json
+{
+  "totals": { "users": 0, "sessions": 0, "pageviews": 0, "avgDuration": 0 },
+  "timeseries": [
+    { "date": "2025-10-01T00:00:00.000Z", "users": 0, "sessions": 0, "pageviews": 0 }
+  ],
+  "breakdowns": {
+    "topPages": [{ "url": "/", "views": 0, "avgDuration": 0 }],
+    "countries": [{ "country": "NL", "users": 0 }],
+    "browsers": [{ "browser": "Chrome", "users": 0 }],
+    "devices": [{ "device": "Desktop", "users": 0 }]
+  }
+}
+```
+
+Minimal Hono route
+```ts
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+app.get('/metrics', async (c) => {
+  const apiKey = c.req.header('x-api-key')
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  const start = c.req.query('start_date')
+  const end = c.req.query('end_date')
+
+  // TODO: fetch from your storage
+  return c.json({
+    totals: { users: 0, sessions: 0, pageviews: 0, avgDuration: 0 },
+    timeseries: [],
+    breakdowns: { topPages: [], countries: [], browsers: [], devices: [] }
+  })
+})
+
+export default app
+```
+
+Notes
+- Storage is up to you: Postgres, SQLite, ClickHouse, KV, etc.
+- The client only requires that the shape matches the contract above.

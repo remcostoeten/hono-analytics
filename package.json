@@ -10,5 +10,8 @@
     "dev": "bun run --filter docs dev",
     "build": "bun run --filter @hono-analytics/dashboard-hooks build",
     "build:all": "bun run build && bun run --filter docs build"
+  },
+  "dependencies": {
+    "create-fumadocs-app": "^15.8.3"
   }
 }

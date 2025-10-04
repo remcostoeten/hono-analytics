@@ -52,7 +52,7 @@ export type TAnalyticsConfig = {
   endpoint: string
 }
 
-export type TDashboardConfig = TAnalyticsConfig
+export type TConfig = TAnalyticsConfig
 
 export type THookResponse<T> = {
   data: T | null
