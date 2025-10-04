@@ -1,6 +1,6 @@
 # honolytics
 
-React hooks for analytics  data with centralized configuration.
+React hooks for analytics data with centralized configuration.
 
 ## Installation
 
@@ -27,7 +27,7 @@ function App() {
 }
 ```
 
-### 2. Use Analytics Hooks
+### 2. Use Hooks
 
 ```tsx
 import { useAnalytics, useTotals } from 'honolytics'
@@ -41,7 +41,7 @@ function () {
 
   return (
     <div>
-      <h1>Analytics </h1>
+<h1>Analytics</h1>
       <p>Users: {totals?.users}</p>
       <p>Sessions: {totals?.sessions}</p>
       <p>Page Views: {totals?.pageviews}</p>
@@ -70,18 +70,24 @@ All hooks require `HonolyticsProvider` and support date range filtering and poll
 
 ## Hook Options
 
-All hooks accept the same options object:
+Core hook (useAnalytics): supports all options
 
-```tsx
-type HookOptions = {
-  dateRange?: {
-    from: Date
-    to: Date
-  }
-  pollingInterval?: number // milliseconds
+```ts
+{
+  dateRange?: { from: Date; to: Date }
+  pollingInterval?: number // ms
   maxRetries?: number // default: 3
   enableCache?: boolean // default: true
-  cacheTTL?: number // milliseconds, default: 5000
+  cacheTTL?: number // ms, default: 5000
+}
+```
+
+Slice hooks (useTotals/useTimeseries/useTopPages/useCountries/useBrowsers/useDevices):
+
+```ts
+{
+  dateRange?: { from: Date; to: Date }
+  pollingInterval?: number // ms
 }
 ```
 

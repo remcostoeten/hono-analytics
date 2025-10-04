@@ -1,7 +1,7 @@
 {
   "name": "honolytics",
   "version": "0.1.0",
-  "description": "React hooks for building analytics s with Hono.js backend. Provides centralized configuration and specialized hooks for metrics, timeseries, and breakdowns.",
+  "description": "React hooks for building analytics dashboards with a Hono.js backend. Centralized config, timeseries and breakdown slices, polling, and caching.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -11,7 +11,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "bun run clean && tsc",
     "typecheck": "tsc --noEmit",
     "dev": "tsc --watch",
     "prepublishOnly": "bun run build && bun run typecheck"
@@ -32,7 +33,7 @@
   "author": "Remco Stoeten <remcostoeten@hotmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/remcostoeten/honolytics.git",
+    "url": "https://github.com/remcostoeten/hono-analytics.git",
     "directory": "packages/hooks"
   },
   "homepage": "https://github.com/remcostoeten/honolytics#readme",

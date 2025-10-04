@@ -3,14 +3,14 @@
 A complete analytics solution built with Hono.js, featuring:
 
 - 📊 **Real-time Analytics Collection** - Track pageviews, users, sessions, and custom events
-- 🎛️ ** Hooks** - React hooks for building analytics s with centralized configuration
+- 🎛️ **Hooks** - React hooks for building analytics dashboards with centralized configuration
 - 🚀 **High Performance** - Built on Hono.js for blazing-fast performance
 - 🔒 **Privacy-First** - Self-hosted analytics solution you control
 - 📱 **Multi-Platform** - Works with React, Next.js, and vanilla JavaScript
 
 ## Quick Start
 
-### 1. Install  Hooks
+### 1. Install Hooks
 
 ```bash
 bun add honolytics
@@ -47,7 +47,7 @@ function () {
 
   return (
     <div>
-      <h1>Analytics </h1>
+<h1>Analytics</h1>
       <p>Users: {totals?.users}</p>
       <p>Sessions: {totals?.sessions}</p>
       <p>Page Views: {totals?.pageviews}</p>
