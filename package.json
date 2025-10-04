@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "bun run --filter docs dev",
-    "build": "bun run --filter @honolytics/hooks build",
+    "build": "bun run --filter honolytics build",
     "build:all": "bun run build && bun run --filter docs build"
   },
   "dependencies": {

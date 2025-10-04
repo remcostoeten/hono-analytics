@@ -1,5 +1,5 @@
 {
-  "name": "@honolytics/hooks",
+  "name": "honolytics",
   "version": "0.1.0",
   "description": "React hooks for building analytics s with Hono.js backend. Provides centralized configuration and specialized hooks for metrics, timeseries, and breakdowns.",
   "type": "module",
