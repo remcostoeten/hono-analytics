@@ -1,11 +1,11 @@
-# @honolytics/hooks
+# honolytics
 
 React hooks for analytics  data with centralized configuration.
 
 ## Installation
 
 ```bash
-bun add @honolytics/hooks
+bun add honolytics
 ```
 
 ## Usage
@@ -13,16 +13,16 @@ bun add @honolytics/hooks
 ### 1. Wrap Your App
 
 ```tsx
-import { AnalyticsProvider } from '@honolytics/hooks'
+import { HonolyticsProvider } from 'honolytics'
 
 function App() {
   return (
-    <AnalyticsProvider
+    <HonolyticsProvider
       apiKey="your-api-key-here"
       endpoint="http://localhost:8000"
     >
       < />
-    </AnalyticsProvider>
+    </HonolyticsProvider>
   )
 }
 ```
@@ -30,7 +30,7 @@ function App() {
 ### 2. Use Analytics Hooks
 
 ```tsx
-import { useAnalytics, useTotals } from '@honolytics/hooks'
+import { useAnalytics, useTotals } from 'honolytics'
 
 function () {
   const { data, loading, error } = useAnalytics()
@@ -52,7 +52,7 @@ function () {
 
 ## Available Hooks
 
-All hooks require `AnalyticsProvider` and support date range filtering and polling:
+All hooks require `HonolyticsProvider` and support date range filtering and polling:
 
 ### Core Hook
 - `useAnalytics(options?)` - Complete analytics data
@@ -184,7 +184,7 @@ import type {
   TMetricsResponse, 
   TConfig,
   TDateRange 
-} from '@honolytics/hooks'
+} from 'honolytics'
 
 const config: TConfig = {
   apiKey: 'key',
@@ -197,5 +197,5 @@ const config: TConfig = {
 If you forget to wrap your app in the provider, you'll get a helpful error:
 
 ```
-useAnalytics must be used within AnalyticsProvider
+useAnalytics must be used within HonolyticsProvider
 ```

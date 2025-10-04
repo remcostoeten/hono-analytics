@@ -13,22 +13,22 @@ A complete analytics solution built with Hono.js, featuring:
 ### 1. Install  Hooks
 
 ```bash
-bun add @honolytics/hooks
+bun add honolytics
 ```
 
 ### 2. Wrap Your App with Provider
 
 ```tsx
-import { AnalyticsProvider } from '@honolytics/hooks'
+import { HonolyticsProvider } from 'honolytics'
 
 function App() {
   return (
-    <AnalyticsProvider
+    <HonolyticsProvider
       apiKey="your-api-key-here"
       endpoint="http://localhost:8000"
     >
       < />
-    </AnalyticsProvider>
+    </HonolyticsProvider>
   )
 }
 ```
@@ -36,7 +36,7 @@ function App() {
 ### 3. Use Analytics Hooks
 
 ```tsx
-import { useAnalytics, useTotals } from '@honolytics/hooks'
+import { useAnalytics, useTotals } from 'honolytics'
 
 function () {
   const { data, loading, error } = useAnalytics()
@@ -58,7 +58,7 @@ function () {
 
 ## 📦 Packages
 
-### [@honolytics/hooks](./packages/hooks/)
+### [honolytics](./packages/hooks/)
 
 React hooks for building analytics s with centralized configuration.
 

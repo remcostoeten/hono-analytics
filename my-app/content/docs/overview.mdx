@@ -19,7 +19,7 @@ bun add honolytics
 
 Setup
 ```tsx
-import { HonolyticsProvider } from '@honolytics/hooks'
+import { HonolyticsProvider } from 'honolytics'
 
 export function App() {
   return (
@@ -35,7 +35,7 @@ export function App() {
 
 Use
 ```tsx
-import { useTotals, useAnalytics } from '@honolytics/hooks'
+import { useTotals, useAnalytics } from 'honolytics'
 
 // Totals only
 const { data: totals, loading, error } = useTotals()

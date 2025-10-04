@@ -16,16 +16,16 @@ bun add honolytics
 ## Setup
 
 ```tsx
-import { AnalyticsProvider } from '@honolytics/hooks'
+import { HonolyticsProvider } from 'honolytics'
 
 export default function App() {
   return (
-    <AnalyticsProvider
+    <HonolyticsProvider
       apiKey={process.env.NEXT_PUBLIC_ANALYTICS_KEY!}
       endpoint={process.env.NEXT_PUBLIC_ANALYTICS_URL!}
     >
       <YourApp />
-    </AnalyticsProvider>
+    </HonolyticsProvider>
   )
 }
 ```
