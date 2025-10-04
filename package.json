@@ -1,0 +1,14 @@
+{
+  "name": "hono-analytics",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter docs dev",
+    "build": "bun run --filter @hono-analytics/dashboard-hooks build",
+    "build:all": "bun run build && bun run --filter docs build"
+  }
+}
