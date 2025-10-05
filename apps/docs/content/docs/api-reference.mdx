@@ -1,83 +1,71 @@
 ---
 title: API Reference
-description: Exact exports, options, and return values.
+description: Complete API documentation for React hooks and storage adapters.
 ---
 
-## Imports
+Comprehensive documentation for all honolytics APIs, organized by functionality.
 
-```ts
-import {
-  HonolyticsProvider,
-  useConfig,
-  useAnalytics,
-  useTotals, useTimeseries, useTopPages, useCountries, useBrowsers, useDevices
-} from 'honolytics'
+## React Hooks API
+
+React hooks for building analytics dashboards with caching, polling, and error handling.
+
+- **[Core Hooks](./api-reference/hooks/core)** — `useAnalytics`, `HonolyticsProvider`, and `useConfig`
+- **[Metric Slice Hooks](./api-reference/hooks/slices)** — `useTotals`, `useTimeseries`, `useTopPages`, etc.
+- **[Hook Types & Behaviors](./api-reference/hooks/types)** — `THookResponse`, caching, and polling behavior
+
+## Storage API
+
+Storage adapters for persisting analytics data without external APIs.
+
+- **[Local Storage](./api-reference/storage/local)** — Browser localStorage adapter ✅ **Production Ready**
+- **[IndexedDB](./api-reference/storage/indexdb)** — Browser IndexedDB adapter ✅ **Production Ready**
+- **[PostgreSQL](./api-reference/storage/postgres)** — PostgreSQL database adapter ⚠️ **Needs Testing**
+- **[Turso](./api-reference/storage/turso)** — Turso SQLite adapter ⚠️ **Needs Testing**
+- **[SQLite](./api-reference/storage/sqlite)** — SQLite adapter ❌ **Not Implemented**
+- **[Storage Types & Interface](./api-reference/storage/types)** — `TAdapter`, `TEvent`, and type definitions
+
+## Quick Reference
+
+### Basic Usage
+
+```tsx
+import { HonolyticsProvider, useAnalytics } from 'honolytics'
+
+// HTTP Mode
+<HonolyticsProvider apiKey="key" endpoint="/api/metrics">
+  <App />
+</HonolyticsProvider>
+
+// Storage Mode
+<HonolyticsProvider storageMode={true}>
+  <App />
+</HonolyticsProvider>
+
+// In components
+const { data, loading, error, refetch } = useAnalytics()
 ```
 
-## Provider
+### Storage Setup
 
-- **HonolyticsProvider(props)**
-  - `apiKey: string`
-  - `endpoint: string`
-  - `children: ReactNode`
-- **useConfig()**: `{ apiKey: string; endpoint: string } | null`
+```tsx
+import { initStorage, local, postgres } from 'honolytics/storage'
 
-## Core hook
+// Browser storage
+await initStorage(local())
 
-- **useAnalytics(options?)**: `THookResponse<TMetricsResponse>`
-
-**Options:**
-- `dateRange?: { from: Date; to: Date }`
-- `pollingInterval?: number` (ms)
-- `maxRetries?: number` (default: 3)
-- `enableCache?: boolean` (default: true)
-- `cacheTTL?: number` (ms, default: 5000)
-
-**Returns:**
-- `{ data: TMetricsResponse | null, loading: boolean, error: string | null, refetch: () => Promise<void> }`
-
-## Slice hooks
-
-Each returns `THookResponse` of a specific slice.
-
-**Options accepted:** `{ dateRange?, pollingInterval? }`
-
-**Available hooks:**
-- `useTotals(options?)` → `{ users, sessions, pageviews, avgDuration }`
-- `useTimeseries(options?)` → `{ date, users, sessions, pageviews }[]`
-- `useTopPages(options?)` → `{ url, views, avgDuration }[]`
-- `useCountries(options?)` → `{ country, users }[]`
-- `useBrowsers(options?)` → `{ browser, users }[]`
-- `useDevices(options?)` → `{ device, users }[]`
-
-## Types
-
-**TMetricsResponse:**
-```ts
-{
-  totals: { users: number; sessions: number; pageviews: number; avgDuration: number }
-  timeseries: { date: string; users: number; sessions: number; pageviews: number }[]
-  breakdowns: {
-    topPages: { url: string; views: number; avgDuration: number }[]
-    countries: { country: string; users: number }[]
-    browsers: { browser: string; users: number }[]
-    devices: { device: string; users: number }[]
-  }
-}
+// Database storage
+await initStorage(postgres({ url: 'postgresql://...' }))
 ```
 
-**THookResponse\<T\>:**
-```ts
-{ data: T | null; loading: boolean; error: string | null; refetch: () => Promise<void> }
-```
+## Implementation Status
 
-## Behavior
-
-- Provider is required; `useAnalytics` throws if used without it
-- Date range is validated (`from < to`)
-- Polling uses exponential backoff up to `maxRetries`, then stops
-- Request deduplication + cache TTL for identical requests (core hook; slice hooks inherit via core)
-
-## See also
-
-- [Server Contract](./server-contract)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| React Hooks | ✅ Complete | Full implementation with caching, polling, error handling |
+| Local Storage | ✅ Complete | Production-ready browser storage |
+| IndexedDB | ✅ Complete | Production-ready browser database |
+| PostgreSQL | ⚠️ Partial | Implementation complete, needs testing |
+| Turso | ⚠️ Partial | Implementation complete, needs testing |
+| SQLite | ❌ Stub | Requires `better-sqlite3` dependency |
+| Backend API | ❌ Missing | No `/metrics` endpoint implementation |
+| Tracking SDK | ❌ Missing | No event tracking implementation |

@@ -13,7 +13,7 @@ export function CreateApiKey() {
 
   function generateApiKey() {
     setIsGenerating(true)
-    
+
     setTimeout(() => {
       const timestamp = Date.now().toString(36)
       const random = Math.random().toString(36).substring(2, 15)
@@ -49,7 +49,7 @@ export function CreateApiKey() {
 
   return (
     <div className="not-prose my-8">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -61,13 +61,15 @@ export function CreateApiKey() {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-fd-muted">
               <Key className="h-4 w-4 text-fd-muted-foreground" />
             </div>
-            <h3 className="text-base font-medium text-fd-foreground">Generate API Key</h3>
+            <h3 className="text-base font-medium text-fd-foreground">
+              Generate API Key
+            </h3>
           </div>
           <p className="text-sm text-fd-muted-foreground ml-10.5">
             Create a secure key for your application
           </p>
         </div>
-        
+
         {/* Generate Button */}
         <motion.button
           whileHover={{ y: -1 }}
@@ -85,7 +87,7 @@ export function CreateApiKey() {
             'Generate'
           )}
         </motion.button>
-        
+
         {/* API Key Display */}
         <AnimatePresence mode="wait">
           {apiKey && (
@@ -109,9 +111,9 @@ export function CreateApiKey() {
                   Generated
                 </motion.div>
               </div>
-              
+
               <div className="flex items-stretch gap-2">
-                <div 
+                <div
                   className="relative flex-1 group/secret"
                   onMouseEnter={() => setIsHovering(true)}
                   onMouseLeave={() => setIsHovering(false)}
@@ -121,19 +123,19 @@ export function CreateApiKey() {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.05 }}
                     className={`relative rounded-md border transition-all duration-200 ${
-                      isHovering || isRevealed 
-                        ? 'border-fd-foreground/20 bg-fd-accent' 
+                      isHovering || isRevealed
+                        ? 'border-fd-foreground/20 bg-fd-accent'
                         : 'border-fd-border bg-fd-background'
                     }`}
                   >
-                    <code 
+                    <code
                       className="block w-full px-3 py-2.5 pr-9 font-mono text-xs text-fd-foreground break-all transition-all duration-200 cursor-pointer hover:bg-fd-muted/50"
                       onClick={copyToClipboard}
                       title="Click to copy API key"
                     >
                       {getMaskedKey(apiKey)}
                     </code>
-                    
+
                     <button
                       onClick={() => setIsRevealed(!isRevealed)}
                       className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 transition-colors hover:bg-fd-muted"
@@ -163,7 +165,7 @@ export function CreateApiKey() {
                         )}
                       </AnimatePresence>
                     </button>
-                    
+
                     <AnimatePresence>
                       {!isRevealed && isHovering && (
                         <motion.div
@@ -181,7 +183,7 @@ export function CreateApiKey() {
                     </AnimatePresence>
                   </motion.div>
                 </div>
-                
+
                 <motion.button
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -217,14 +219,16 @@ export function CreateApiKey() {
                   </AnimatePresence>
                 </motion.button>
               </div>
-              
+
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.15 }}
                 className="flex items-start gap-2 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 px-3 py-2"
               >
-                <span className="text-amber-600 dark:text-amber-500 text-sm mt-0.5">⚠️</span>
+                <span className="text-amber-600 dark:text-amber-500 text-sm mt-0.5">
+                  ⚠️
+                </span>
                 <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
                   Save this key securely. You won't be able to see it again.
                 </p>

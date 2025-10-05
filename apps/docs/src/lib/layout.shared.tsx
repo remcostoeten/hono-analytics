@@ -1,5 +1,5 @@
-import { Logo } from '@/components/logo';
-import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import { Logo } from '@/components/logo'
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared'
 
 /**
  * Shared layout configurations
@@ -13,11 +13,11 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: (
         <>
-        <Logo/>
+          <Logo />
         </>
       ),
     },
     // see https://fumadocs.dev/docs/ui/navigation/links
     links: [],
-  };
+  }
 }

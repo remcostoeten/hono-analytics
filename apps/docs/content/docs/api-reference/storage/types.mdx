@@ -1,0 +1,241 @@
+---
+title: Storage Types & Interface
+description: Type definitions and interfaces for honolytics storage adapters.
+---
+
+Complete type definitions for the storage system, including the core `TAdapter` interface and data types.
+
+## Core Adapter Interface
+
+All storage adapters implement the `TAdapter` interface:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=70
+export type TAdapter = {
+  connect: () => Promise<void>
+  disconnect: () => Promise<void>
+  insertEvent: (event: TEvent) => Promise<void>
+  insertSession: (session: TSession) => Promise<void>
+  queryMetrics: (start: Date, end: Date) => Promise<TMetric[]>
+  queryEvents: (filters: TEventFilter) => Promise<TEvent[]>
+  queryTopPages: (start: Date, end: Date, limit?: number) => Promise<TPageStat[]>
+  queryCountries: (start: Date, end: Date, limit?: number) => Promise<TCountryStat[]>
+  queryBrowsers: (start: Date, end: Date, limit?: number) => Promise<TBrowserStat[]>
+  queryDevices: (start: Date, end: Date, limit?: number) => Promise<TDeviceStat[]>
+  queryTotals: (start: Date, end: Date) => Promise<TTotals>
+  queryFullMetrics: (start: Date, end: Date) => Promise<TFullMetrics>
+}
+```
+
+## Data Types
+
+### Event Structure
+
+Core analytics event with rich metadata:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=1
+export type TEvent = {
+  id: string
+  timestamp: number
+  userId?: string
+  sessionId: string
+  url: string
+  event: string
+  userAgent?: string
+  ip?: string
+  referrer?: string
+  duration?: number
+  meta?: Record<string, unknown>
+}
+```
+
+**Fields:**
+- `id`: Unique identifier for the event
+- `timestamp`: Unix timestamp in milliseconds
+- `userId`: Optional user identifier for cross-session tracking
+- `sessionId`: Session identifier for grouping events
+- `url`: Page URL where the event occurred
+- `event`: Event type (e.g., 'pageview', 'click', 'conversion')
+- `userAgent`: Browser user agent string for device/browser detection
+- `ip`: IP address for geo-location parsing
+- `referrer`: HTTP referrer header
+- `duration`: Time spent on page in seconds
+- `meta`: Additional custom event data
+
+### Session Structure
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=15
+export type TSession = {
+  id: string
+  userId?: string
+  startTime: number
+  endTime?: number
+  pageviews: number
+  duration?: number
+}
+```
+
+### Metric Types
+
+Daily aggregated metrics:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=24
+export type TMetric = {
+  date: string
+  users: number
+  sessions: number
+  pageviews: number
+}
+```
+
+### Breakdown Types
+
+Page statistics:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=31
+export type TPageStat = {
+  url: string
+  views: number
+  avgDuration: number
+}
+```
+
+Geographic statistics:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=37
+export type TCountryStat = {
+  country: string
+  users: number
+}
+```
+
+Browser and device statistics:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=42
+export type TBrowserStat = {
+  browser: string
+  users: number
+}
+
+export type TDeviceStat = {
+  device: string
+  users: number
+}
+```
+
+### Aggregate Types
+
+Summary statistics:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=52
+export type TTotals = {
+  users: number
+  sessions: number
+  pageviews: number
+  avgDuration: number
+}
+```
+
+Complete metrics response:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=59
+export type TFullMetrics = {
+  totals: TTotals
+  timeseries: TMetric[]
+  breakdowns: {
+    topPages: TPageStat[]
+    countries: TCountryStat[]
+    browsers: TBrowserStat[]
+    devices: TDeviceStat[]
+  }
+}
+```
+
+## Configuration Types
+
+Event filtering for queries:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=85
+export type TEventFilter = {
+  start?: Date
+  end?: Date
+  userId?: string
+  sessionId?: string
+  event?: string
+}
+```
+
+Storage configuration:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/types.ts start=93
+export type TStorageConfig = {
+  type: 'local' | 'indexdb' | 'sqlite' | 'postgres' | 'turso'
+  url?: string
+  token?: string
+  ssl?: boolean | 'require' | 'prefer' | 'allow' // SSL mode
+}
+```
+
+## Parser Types
+
+User agent parsing result:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/parsers/user-agent.ts start=1
+export type TParsedUserAgent = {
+  browser: string
+  browserVersion: string
+  device: string
+  os: string
+}
+```
+
+Geo-IP lookup service interface:
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/parsers/geo.ts start=1
+export type TGeoLookupService = {
+  lookup: (ip: string) => Promise<string | null>
+}
+
+export type TGeoConfig = {
+  service?: TGeoLookupService
+}
+```
+
+## Utility Functions
+
+The storage system includes utility functions for data processing:
+
+### Duration Calculations
+
+- `calculateSessionDuration(session: TSession): number` — Calculate session length in seconds
+- `calculateAvgSessionDuration(sessions: TSession[]): number` — Average session duration
+- `calculatePageDurations(events: TEvent[]): Map<string, number>` — Average time per page
+- `calculateAvgDuration(events: TEvent[]): number` — Average duration from events
+
+### Data Parsing
+
+- `parseUserAgent(userAgent: string): TParsedUserAgent` — Extract browser, device, OS
+- `parseIpToCountry(ip: string, config?: TGeoConfig): Promise<string>` — Async geo lookup
+- `parseIpToCountrySync(ip: string): string` — Sync geo lookup (returns 'Unknown')
+
+## Implementation Notes
+
+### Date Handling
+
+- All timestamps are Unix timestamps in **milliseconds**
+- Date ranges use JavaScript `Date` objects
+- Timeseries data uses ISO date strings (`YYYY-MM-DD`)
+
+### User Identification
+
+- `userId` is optional - anonymous analytics are supported
+- `sessionId` is required for all events to group user behavior
+- Sessions can span multiple pageviews/events
+
+### Data Consistency
+
+All adapters return identical data structures, ensuring compatibility between:
+- Browser storage (localStorage, IndexedDB)
+- Database storage (Postgres, Turso, SQLite)
+- HTTP API mode
+
+This allows seamless migration between storage backends without changing application code.

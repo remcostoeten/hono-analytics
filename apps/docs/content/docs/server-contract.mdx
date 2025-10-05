@@ -1,64 +1,338 @@
 ---
 title: Server Contract
-description: What the client expects from your Hono server.
+description: HTTP API specification for integrating honolytics with your backend.
 ---
 
-Version
-- v0.1 is client-only. You bring your own database and server.
+## What is the Server Contract?
 
-Endpoint
-- GET `{endpoint}/metrics`
+The server contract defines the HTTP API that honolytics React hooks expect from your backend server. When you use **HTTP mode** (not storage mode), the hooks make requests to your server to fetch analytics data.
 
-Headers
-- Content-Type: application/json
-- x-api-key: string (required)
+```tsx
+// HTTP mode - hooks call your server
+<HonolyticsProvider 
+  apiKey="your-api-key" 
+  endpoint="https://your-api.com/analytics"
+>
+  <App />
+</HonolyticsProvider>
 
-Query params (optional)
-- start_date: ISO 8601 string (from.toISOString())
-- end_date: ISO 8601 string (to.toISOString())
+// Your hooks will call: GET https://your-api.com/analytics/metrics
+const { data } = useAnalytics()
+```
 
-Response shape
+## Why Do You Need This?
+
+### When HTTP Mode Makes Sense
+
+- **Existing Analytics Backend**: You already have analytics data in your database
+- **Cross-Device Tracking**: Need to aggregate data across multiple devices/browsers
+- **Server-Side Processing**: Want to do heavy analytics processing on the server
+- **Multi-User Applications**: Analytics shared across different users
+- **Legacy Integration**: Integrating with existing analytics infrastructure
+
+### Alternative: Storage Mode
+
+If you don't want to build a server API, consider **storage mode** instead:
+
+```tsx
+// Storage mode - no server needed
+<HonolyticsProvider storageMode={true}>
+  <App />
+</HonolyticsProvider>
+```
+
+See [Storage Engine](./storage) for client-side analytics options.
+
+## The API Contract
+
+### Endpoint
+
+Your server must implement a single endpoint:
+
+```
+GET {your-endpoint}/metrics
+```
+
+### Request Format
+
+**Headers:**
+- `x-api-key: string` — Required for authentication
+- `Content-Type: application/json`
+
+**Query Parameters (Optional):**
+- `start_date: string` — ISO 8601 date string (e.g., `2024-01-01T00:00:00.000Z`)
+- `end_date: string` — ISO 8601 date string (e.g., `2024-01-31T23:59:59.999Z`)
+
+**Example Request:**
+```bash
+curl "https://your-api.com/analytics/metrics?start_date=2024-01-01T00:00:00.000Z&end_date=2024-01-31T23:59:59.999Z" \
+  -H "x-api-key: your-secret-key"
+```
+
+### Response Format
+
+Your endpoint must return JSON with this exact structure:
+
 ```json
 {
-  "totals": { "users": 0, "sessions": 0, "pageviews": 0, "avgDuration": 0 },
+  "totals": {
+    "users": 1247,
+    "sessions": 1891, 
+    "pageviews": 4552,
+    "avgDuration": 127.5
+  },
   "timeseries": [
-    { "date": "2025-10-01T00:00:00.000Z", "users": 0, "sessions": 0, "pageviews": 0 }
+    { "date": "2024-01-01", "users": 45, "sessions": 67, "pageviews": 128 },
+    { "date": "2024-01-02", "users": 52, "sessions": 74, "pageviews": 156 }
   ],
   "breakdowns": {
-    "topPages": [{ "url": "/", "views": 0, "avgDuration": 0 }],
-    "countries": [{ "country": "NL", "users": 0 }],
-    "browsers": [{ "browser": "Chrome", "users": 0 }],
-    "devices": [{ "device": "Desktop", "users": 0 }]
+    "topPages": [
+      { "url": "/dashboard", "views": 1205, "avgDuration": 245.3 },
+      { "url": "/profile", "views": 892, "avgDuration": 156.7 }
+    ],
+    "countries": [
+      { "country": "United States", "users": 445 },
+      { "country": "Germany", "users": 198 }
+    ],
+    "browsers": [
+      { "browser": "Chrome", "users": 756 },
+      { "browser": "Firefox", "users": 234 }
+    ],
+    "devices": [
+      { "device": "Desktop", "users": 687 },
+      { "device": "Mobile", "users": 423 }
+    ]
   }
 }
 ```
 
-Minimal Hono route
+## Implementation Examples
+
+### Minimal Hono.js Server
+
 ```ts
 import { Hono } from 'hono'
 
 const app = new Hono()
 
 app.get('/metrics', async (c) => {
+  // 1. Authenticate the request
   const apiKey = c.req.header('x-api-key')
-  if (!apiKey || apiKey !== process.env.API_KEY) {
+  if (!apiKey || apiKey !== process.env.ANALYTICS_API_KEY) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  const start = c.req.query('start_date')
-  const end = c.req.query('end_date')
-
-  // TODO: fetch from your storage
-  return c.json({
-    totals: { users: 0, sessions: 0, pageviews: 0, avgDuration: 0 },
-    timeseries: [],
-    breakdowns: { topPages: [], countries: [], browsers: [], devices: [] }
+  // 2. Parse date range (optional)
+  const startDate = c.req.query('start_date') 
+  const endDate = c.req.query('end_date')
+  
+  // 3. Query your database (replace with your logic)
+  const analytics = await getAnalyticsFromDatabase({
+    start: startDate ? new Date(startDate) : undefined,
+    end: endDate ? new Date(endDate) : undefined
   })
+  
+  // 4. Return the required format
+  return c.json(analytics)
 })
 
 export default app
 ```
 
-Notes
-- Storage is up to you: Postgres, SQLite, ClickHouse, KV, etc.
-- The client only requires that the shape matches the contract above.
+### Next.js API Route
+
+```ts
+// app/api/analytics/metrics/route.ts
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const apiKey = request.headers.get('x-api-key')
+  
+  if (!apiKey || apiKey !== process.env.ANALYTICS_API_KEY) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  
+  const startDate = searchParams.get('start_date')
+  const endDate = searchParams.get('end_date')
+  
+  // Your analytics logic here
+  const data = await fetchAnalytics({ startDate, endDate })
+  
+  return Response.json(data)
+}
+```
+
+### Express.js Server
+
+```ts
+import express from 'express'
+
+const app = express()
+
+app.get('/metrics', async (req, res) => {
+  const apiKey = req.headers['x-api-key']
+  
+  if (!apiKey || apiKey !== process.env.ANALYTICS_API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+  
+  const { start_date, end_date } = req.query
+  
+  // Your database query logic
+  const analytics = await queryAnalytics(start_date, end_date)
+  
+  res.json(analytics)
+})
+```
+
+## Data Requirements
+
+### Field Specifications
+
+**Totals:**
+- `users: number` — Unique user count
+- `sessions: number` — Unique session count  
+- `pageviews: number` — Total pageview count
+- `avgDuration: number` — Average session duration in seconds
+
+**Timeseries:**
+- `date: string` — Date in `YYYY-MM-DD` format
+- `users: number` — Daily unique users
+- `sessions: number` — Daily unique sessions
+- `pageviews: number` — Daily pageviews
+
+**Breakdowns:**
+- **topPages**: `url` (string), `views` (number), `avgDuration` (seconds)
+- **countries**: `country` (string), `users` (number)
+- **browsers**: `browser` (string), `users` (number) 
+- **devices**: `device` (string), `users` (number)
+
+### Empty Data Handling
+
+```ts
+// Return empty arrays/zeros when no data exists
+{
+  "totals": { "users": 0, "sessions": 0, "pageviews": 0, "avgDuration": 0 },
+  "timeseries": [],
+  "breakdowns": {
+    "topPages": [],
+    "countries": [], 
+    "browsers": [],
+    "devices": []
+  }
+}
+```
+
+## Security Considerations
+
+### API Key Authentication
+
+```ts
+// ✅ Good: Secure API key validation
+const apiKey = request.headers.get('x-api-key')
+if (!apiKey || !secureCompare(apiKey, process.env.ANALYTICS_API_KEY)) {
+  return unauthorized()
+}
+
+// ❌ Bad: Timing attack vulnerable
+if (apiKey !== process.env.ANALYTICS_API_KEY) {
+  return unauthorized()
+}
+```
+
+### CORS Configuration
+
+```ts
+// Configure CORS for your frontend domain
+app.use(cors({
+  origin: ['https://your-app.com', 'https://staging.your-app.com'],
+  credentials: true
+}))
+```
+
+### Rate Limiting
+
+```ts
+// Protect against abuse
+app.use('/metrics', rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+}))
+```
+
+## Testing Your Implementation
+
+### Manual Testing
+
+```bash
+# Test authentication
+curl "http://localhost:3000/metrics" \
+  -H "x-api-key: wrong-key"
+# Should return 401
+
+# Test valid request
+curl "http://localhost:3000/metrics" \
+  -H "x-api-key: correct-key"
+# Should return analytics data
+
+# Test with date range
+curl "http://localhost:3000/metrics?start_date=2024-01-01T00:00:00.000Z&end_date=2024-01-31T23:59:59.999Z" \
+  -H "x-api-key: correct-key"
+```
+
+### Integration Testing
+
+```tsx
+// Test with actual React hooks
+function TestComponent() {
+  const { data, loading, error } = useAnalytics()
+  
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!data) return <div>No data</div>
+  
+  return (
+    <div>
+      <p>Users: {data.totals.users}</p>
+      <p>Sessions: {data.totals.sessions}</p>
+      <p>Pageviews: {data.totals.pageviews}</p>
+    </div>
+  )
+}
+```
+
+## Common Issues
+
+### CORS Errors
+```
+Access to fetch at 'https://api.example.com/metrics' from origin 'https://app.example.com' has been blocked by CORS policy
+```
+**Solution**: Configure CORS headers on your server.
+
+### Authentication Failures
+```
+401 Unauthorized
+```
+**Solution**: Check that `x-api-key` header matches your server's expected key.
+
+### Invalid Response Format
+```
+Error: Expected object with 'totals' property
+```
+**Solution**: Ensure your response matches the exact JSON structure above.
+
+## Next Steps
+
+For comprehensive examples and advanced patterns:
+
+- **[Database Integration Examples](./examples/database-integration)** — PostgreSQL, MySQL, SQLite examples
+- **[Framework Examples](./examples/frameworks)** — Next.js, Remix, SvelteKit implementations  
+- **[Authentication Patterns](./examples/auth-patterns)** — JWT, session-based, API key strategies
+- **[Performance Optimization](./examples/performance)** — Caching, indexing, query optimization
+
+## Storage Mode Alternative
+
+If implementing a server API seems complex, consider using [Storage Mode](./storage) instead:
+
+- **No Server Required**: Analytics run entirely client-side
+- **Multiple Storage Options**: localStorage, IndexedDB, PostgreSQL, Turso
+- **Same React Hooks**: Identical API, just change the provider mode

@@ -1,0 +1,267 @@
+---
+title: Local Storage Adapter
+description: Browser localStorage adapter for client-side analytics storage ✅ Production Ready
+---
+
+The Local Storage adapter stores analytics data in the browser's `localStorage`. Perfect for client-side analytics, testing, or offline scenarios.
+
+## Status: ✅ Production Ready
+
+Fully implemented with all query methods and automatic data parsing.
+
+## Usage
+
+### Basic Setup
+
+```tsx
+import { LocalAdapter } from 'honolytics/storage'
+
+const adapter = new LocalAdapter()
+await adapter.connect()
+
+// Insert analytics data
+await adapter.insertEvent({
+  id: 'evt_123',
+  timestamp: Date.now(),
+  sessionId: 'session_abc',
+  url: '/dashboard',
+  event: 'pageview',
+  userAgent: navigator.userAgent,
+  duration: 45
+})
+
+// Query analytics
+const metrics = await adapter.queryFullMetrics(
+  new Date('2024-01-01'),
+  new Date('2024-01-31')
+)
+```
+
+### With Storage Factory
+
+```tsx
+import { initStorage, local } from 'honolytics/storage'
+
+await initStorage(local())
+
+// Now use with React hooks in storage mode
+<HonolyticsProvider storageMode={true}>
+  <App />
+</HonolyticsProvider>
+```
+
+## API Reference
+
+### Constructor
+
+```ts
+new LocalAdapter()
+```
+
+No configuration required. The adapter uses fixed localStorage keys:
+- `honolytics:events` — Event storage
+- `honolytics:sessions` — Session storage
+
+### Connection Management
+
+```ts
+async connect(): Promise<void>
+```
+
+Validates browser environment. Throws error if `window` is undefined (SSR).
+
+```ts
+async disconnect(): Promise<void>
+```
+
+No-op for localStorage (no persistent connections).
+
+### Data Insertion
+
+```ts
+async insertEvent(event: TEvent): Promise<void>
+```
+
+Appends event to localStorage array. No deduplication - events with duplicate IDs will be stored multiple times.
+
+```ts
+async insertSession(session: TSession): Promise<void>
+```
+
+Upserts session by ID. Updates existing sessions or creates new ones.
+
+### Query Methods
+
+#### Time Series Metrics
+
+```ts
+async queryMetrics(start: Date, end: Date): Promise<TMetric[]>
+```
+
+Returns daily aggregated metrics (users, sessions, pageviews) grouped by date.
+
+#### Event Filtering
+
+```ts
+async queryEvents(filters: TEventFilter): Promise<TEvent[]>
+```
+
+Filter events by date range, user ID, session ID, or event type:
+
+```tsx
+// Get all pageviews for a user
+const events = await adapter.queryEvents({
+  start: new Date('2024-01-01'),
+  end: new Date('2024-01-31'),
+  userId: 'user_123',
+  event: 'pageview'
+})
+```
+
+#### Breakdown Queries
+
+```ts
+async queryTopPages(start: Date, end: Date, limit = 10): Promise<TPageStat[]>
+```
+
+Returns top pages by views with average duration. Only includes 'pageview' events.
+
+```ts
+async queryCountries(start: Date, end: Date, limit = 10): Promise<TCountryStat[]>
+```
+
+Groups users by country using IP parsing. **Note**: Returns 'Unknown' since geo-IP lookup is not implemented.
+
+```ts
+async queryBrowsers(start: Date, end: Date, limit = 10): Promise<TBrowserStat[]>
+```
+
+Parses user agents and groups users by browser (Chrome, Firefox, Safari, etc.).
+
+```ts
+async queryDevices(start: Date, end: Date, limit = 10): Promise<TDeviceStat[]>
+```
+
+Groups users by device type (Desktop, Mobile, Tablet).
+
+#### Aggregate Queries
+
+```ts
+async queryTotals(start: Date, end: Date): Promise<TTotals>
+```
+
+Returns summary statistics: total users, sessions, pageviews, and average session duration.
+
+```ts
+async queryFullMetrics(start: Date, end: Date): Promise<TFullMetrics>
+```
+
+Executes all query methods in parallel and returns complete analytics data structure.
+
+## Data Processing
+
+### Automatic Parsing
+
+The adapter automatically processes raw event data:
+
+- **User Agent Parsing**: Extracts browser, version, device type, and OS
+- **Date Grouping**: Groups events by ISO date strings (`YYYY-MM-DD`)
+- **Duration Calculations**: Computes average session and page durations
+- **Deduplication**: Removes duplicate users/sessions in metrics
+
+### Example Data Flow
+
+```tsx
+// Raw event storage
+{
+  "id": "evt_123",
+  "timestamp": 1704067200000,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)...",
+  "sessionId": "session_abc",
+  "event": "pageview",
+  "url": "/dashboard",
+  "duration": 45
+}
+
+// Processed metrics output
+{
+  "totals": {
+    "users": 1,
+    "sessions": 1, 
+    "pageviews": 1,
+    "avgDuration": 45
+  },
+  "breakdowns": {
+    "browsers": [{ "browser": "Chrome", "users": 1 }],
+    "devices": [{ "device": "Desktop", "users": 1 }],
+    "topPages": [{ "url": "/dashboard", "views": 1, "avgDuration": 45 }]
+  }
+}
+```
+
+## Performance Considerations
+
+### Storage Limits
+
+- **localStorage Limit**: ~5-10MB per origin (browser dependent)
+- **Memory Usage**: All data loaded into memory for queries
+- **Query Performance**: O(n) linear scan for most operations
+
+### Best Practices
+
+```tsx
+// ✅ Good: Clear old data periodically
+const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+const events = adapter.getEvents().filter(e => e.timestamp > oneMonthAgo.getTime())
+localStorage.setItem('honolytics:events', JSON.stringify(events))
+
+// ✅ Good: Use date range queries to limit data processing
+const recentMetrics = await adapter.queryMetrics(
+  new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+  new Date()
+)
+
+// ❌ Avoid: Storing large amounts of event data
+// Consider using IndexedDB adapter for larger datasets
+```
+
+## Browser Compatibility
+
+- **Modern Browsers**: Full support (Chrome, Firefox, Safari, Edge)
+- **localStorage Required**: Fails gracefully if localStorage is disabled
+- **SSR Safe**: Throws clear error when used server-side
+
+## Data Persistence
+
+- **Persistent**: Data survives browser restarts
+- **Origin Scoped**: Isolated per domain/subdomain
+- **User Controllable**: Users can clear via browser settings
+- **Incognito**: Available but cleared when session ends
+
+## Migration Notes
+
+When upgrading from HTTP mode to Local Storage:
+
+1. **Data Import**: No automatic import from existing backends
+2. **Schema Compatibility**: Uses same event/session structure as other adapters
+3. **Query Compatibility**: Identical API ensures hooks work unchanged
+
+## Limitations
+
+- **No Geo-IP**: Country queries return 'Unknown'
+- **Client-Side Only**: Cannot be used in Node.js/server environments
+- **Storage Limits**: Browser localStorage size restrictions
+- **No Real-Time**: Data only available to current browser tab
+
+## Use Cases
+
+Perfect for:
+- **Client-side Analytics**: Track user behavior without server dependency
+- **Offline Applications**: Analytics that work without internet connection  
+- **Development**: Testing analytics integration during development
+- **Privacy-First**: No data leaves the user's browser
+
+Not suitable for:
+- **Cross-Device Analytics**: Data is browser-specific
+- **Large-Scale Analytics**: Storage and performance limitations
+- **Server-Side Tracking**: Requires browser environment

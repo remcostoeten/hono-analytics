@@ -8,6 +8,9 @@
   ],
   "scripts": {
     "dev": "bun run --filter docs dev",
+    "docs": "cd apps/docs; bun run dev",
+    "docs:build": "cd apps/docs; bun run build",
+    "deploy": "./scripts/deploy-blog.sh",
     "build": "bun run --filter honolytics build",
     "build:all": "bun run build && bun run --filter docs build"
   },

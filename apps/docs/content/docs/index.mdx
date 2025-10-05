@@ -1,14 +1,20 @@
 ---
 title: Getting Started  
-description: v0.2.0 — Client hooks + storage engine. LocalStorage, IndexedDB, Postgres, and Turso adapters included.
+description: Quick installation and setup guide to get Honolytics running in your React application.
 ---
 
-## Install
+<div style={{ padding: '1rem', backgroundColor: '#111', border: '1px solid #f59e0b', borderRadius: '0.5rem', marginBottom: '2rem' }}>
+💡 **New here?** Check out the [Introduction](./intro) to understand what Honolytics offers and if it's right for your project.
+</div>
+
+Ready to integrate Honolytics into your React app? Let's get you set up in minutes.
+
+## Installation
 
 ```bash
-bun add honolytics // or pnpm
+bun add honolytics
 ```
-<small>or if you're a maniac npm/yarn</small>
+
 ## Quick Start
 
 ### HTTP Mode (v0.1 compatibility)
@@ -78,6 +84,10 @@ function Dashboard() {
 
 ## Next Steps
 
-- [Storage Engine](./storage) — v0.2.0 storage adapters and configuration
-- [API Reference](./api-reference) — Hook options and return types  
-- [Server Contract](./server-contract) — HTTP endpoint specification
+Now that you have Honolytics installed and configured:
+
+- [Storage Engine](./storage) — Configure local storage, databases, and adapters
+- [API Reference](./api-reference) — Explore all available hooks and options
+- [Server Contract](./server-contract) — Implement the backend `/metrics` endpoint
+
+**Not sure about implementation details?** Review the [Introduction](./intro) for architecture guidance and performance expectations.

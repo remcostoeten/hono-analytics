@@ -1,0 +1,288 @@
+---
+title: SQLite Adapter
+description: SQLite database adapter for server-side analytics ❌ Not Implemented
+---
+
+The SQLite adapter is designed to store analytics data in a SQLite database file. Currently **not implemented** - only contains stubs.
+
+## Status: ❌ Not Implemented
+
+This adapter currently throws "Not implemented" errors for all operations. Requires `better-sqlite3` dependency and full implementation.
+
+## Current Implementation
+
+```ts path=/home/remco-stoeten/projects/honolytics/packages/hooks/src/storage/adapters/sqlite.ts start=3
+export class SQLiteAdapter implements TAdapter {
+  private db: any = null
+
+  constructor(private url: string) {}
+
+  async connect(): Promise<void> {
+    throw new Error('SQLite adapter requires better-sqlite3. Install: bun add better-sqlite3')
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.db) {
+      this.db.close()
+      this.db = null
+    }
+  }
+
+  async insertEvent(event: TEvent): Promise<void> {
+    throw new Error('Not implemented')
+  }
+
+  async insertSession(session: TSession): Promise<void> {
+    throw new Error('Not implemented')
+  }
+
+  // ... all other methods throw "Not implemented"
+}
+```
+
+## Missing Dependencies
+
+The adapter requires the `better-sqlite3` package:
+
+```bash
+bun add better-sqlite3
+```
+
+## Planned Usage (Not Working)
+
+```tsx
+import { SQLiteAdapter } from 'honolytics/storage'
+
+// This will currently throw an error
+const adapter = new SQLiteAdapter('./analytics.db')
+await adapter.connect() // Error: Not implemented
+```
+
+## Implementation Requirements
+
+To complete this adapter, the following needs to be implemented:
+
+### 1. Database Connection
+
+```ts
+// Planned implementation
+async connect(): Promise<void> {
+  try {
+    const Database = await import('better-sqlite3')
+    this.db = new Database(this.url)
+    
+    // Run schema migrations
+    await this.runMigrations()
+    
+  } catch (error) {
+    if (error.code === 'MODULE_NOT_FOUND') {
+      throw new Error('SQLite adapter requires better-sqlite3. Install: bun add better-sqlite3')
+    }
+    throw error
+  }
+}
+```
+
+### 2. Schema Creation
+
+```sql
+-- Required tables and indices
+CREATE TABLE IF NOT EXISTS events (
+  id TEXT PRIMARY KEY,
+  timestamp INTEGER NOT NULL,
+  user_id TEXT,
+  session_id TEXT NOT NULL,
+  url TEXT NOT NULL,
+  event TEXT NOT NULL,
+  user_agent TEXT,
+  ip TEXT,
+  referrer TEXT,
+  duration INTEGER,
+  meta TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_events_session_id ON events(session_id);
+CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT,
+  start_time INTEGER NOT NULL,
+  end_time INTEGER,
+  pageviews INTEGER NOT NULL DEFAULT 0,
+  duration INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON sessions(start_time);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+```
+
+### 3. Query Implementation
+
+```ts
+// Example query implementation needed
+async queryMetrics(start: Date, end: Date): Promise<TMetric[]> {
+  const startMs = start.getTime()
+  const endMs = end.getTime()
+  
+  const stmt = this.db.prepare(`
+    SELECT 
+      DATE(datetime(timestamp / 1000, 'unixepoch')) as date,
+      COUNT(DISTINCT user_id) as users,
+      COUNT(DISTINCT session_id) as sessions,
+      COUNT(CASE WHEN event = 'pageview' THEN 1 END) as pageviews
+    FROM events 
+    WHERE timestamp >= ? AND timestamp <= ?
+    GROUP BY DATE(datetime(timestamp / 1000, 'unixepoch'))
+    ORDER BY date
+  `)
+  
+  const rows = stmt.all(startMs, endMs)
+  
+  return rows.map(row => ({
+    date: row.date,
+    users: row.users,
+    sessions: row.sessions,
+    pageviews: row.pageviews
+  }))
+}
+```
+
+### 4. Data Insertion
+
+```ts
+// Example insertion implementation needed
+async insertEvent(event: TEvent): Promise<void> {
+  const stmt = this.db.prepare(`
+    INSERT OR REPLACE INTO events (
+      id, timestamp, user_id, session_id, url, event,
+      user_agent, ip, referrer, duration, meta
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `)
+  
+  stmt.run(
+    event.id,
+    event.timestamp,
+    event.userId || null,
+    event.sessionId,
+    event.url,
+    event.event,
+    event.userAgent || null,
+    event.ip || null,
+    event.referrer || null,
+    event.duration || null,
+    event.meta ? JSON.stringify(event.meta) : null
+  )
+}
+```
+
+## Architectural Questions
+
+### Server vs Client Usage
+
+The SQLite adapter raises architectural questions:
+
+1. **Server-Side**: SQLite is ideal for server-side analytics storage
+2. **Client-Side**: Cannot run in browsers (requires Node.js/Bun)
+3. **Package Location**: Currently in client-side hooks package
+
+### Recommended Architecture
+
+For server-side SQLite usage:
+
+```tsx
+// Server-side analytics service
+import { SQLiteAdapter } from 'honolytics/storage'
+
+class AnalyticsService {
+  private adapter = new SQLiteAdapter('./analytics.db')
+  
+  async init() {
+    await this.adapter.connect()
+  }
+  
+  async trackEvent(event: TEvent) {
+    await this.adapter.insertEvent(event)
+  }
+  
+  async getMetrics(start: Date, end: Date) {
+    return await this.adapter.queryFullMetrics(start, end)
+  }
+}
+
+// API endpoint
+export async function POST(request: Request) {
+  const event = await request.json()
+  await analyticsService.trackEvent(event)
+  return Response.json({ success: true })
+}
+```
+
+## Migration from Other Adapters
+
+When implemented, migration would work like other adapters:
+
+```tsx
+// Migrate from IndexedDB to SQLite (server-side)
+const sourceAdapter = new IndexDBAdapter()
+const targetAdapter = new SQLiteAdapter('./analytics.db')
+
+await sourceAdapter.connect()
+await targetAdapter.connect()
+
+// Export data from browser
+const events = await sourceAdapter.queryEvents({})
+const sessions = await sourceAdapter.getAllSessions()
+
+// Import to SQLite
+for (const event of events) {
+  await targetAdapter.insertEvent(event)
+}
+
+for (const session of sessions) {
+  await targetAdapter.insertSession(session)
+}
+```
+
+## Performance Characteristics (When Implemented)
+
+Expected performance benefits:
+
+- **File-Based**: Single database file, easy to backup/restore
+- **Fast Queries**: SQL optimizations and indexed queries
+- **ACID Transactions**: Data integrity guarantees
+- **Concurrent Reads**: Multiple readers, single writer
+- **Embeddable**: No separate server process required
+
+## Use Cases (When Implemented)
+
+Perfect for:
+- **Server-Side Analytics**: Node.js/Bun backend analytics
+- **Desktop Applications**: Electron apps with local storage
+- **Development**: Local analytics during development
+- **Small to Medium Scale**: Single-server deployments
+
+Not suitable for:
+- **Browser Applications**: Requires Node.js environment
+- **High Concurrency**: Limited concurrent write performance
+- **Distributed Systems**: Single file, not cluster-friendly
+- **Large Scale**: Consider PostgreSQL for millions of events
+
+## Contributing
+
+To implement this adapter:
+
+1. **Add Dependency**: Include `better-sqlite3` as optional peer dependency
+2. **Schema Migrations**: Implement database schema setup
+3. **Query Methods**: Implement all TAdapter interface methods
+4. **Error Handling**: Proper SQLite error handling
+5. **Tests**: Add comprehensive test suite
+6. **Documentation**: Update this documentation
+
+## Related Adapters
+
+For similar functionality that is implemented:
+- **[Turso](./turso)** - SQLite-compatible cloud database (implemented)
+- **[PostgreSQL](./postgres)** - Full-featured SQL database (implemented)
+- **[IndexedDB](./indexdb)** - Browser-based alternative (implemented)

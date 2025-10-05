@@ -1,0 +1,10 @@
+{
+  "pages": [
+    "intro",
+    "index",
+    "overview",
+    "storage",
+    "server-contract",
+    "api-reference"
+  ]
+}

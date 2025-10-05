@@ -1,0 +1,397 @@
+---
+title: IndexedDB Adapter
+description: Browser IndexedDB adapter for client-side analytics database ✅ Production Ready
+---
+
+The IndexedDB adapter stores analytics data in the browser's IndexedDB database. Ideal for larger datasets and better performance compared to localStorage.
+
+## Status: ✅ Production Ready
+
+Fully implemented with proper async operations, database schema, and indexing.
+
+## Usage
+
+### Basic Setup
+
+```tsx
+import { IndexDBAdapter } from 'honolytics/storage'
+
+const adapter = new IndexDBAdapter()
+await adapter.connect()
+
+// Insert analytics data
+await adapter.insertEvent({
+  id: 'evt_123',
+  timestamp: Date.now(),
+  sessionId: 'session_abc',
+  url: '/dashboard',
+  event: 'pageview',
+  userAgent: navigator.userAgent,
+  duration: 45
+})
+
+// Query analytics
+const metrics = await adapter.queryFullMetrics(
+  new Date('2024-01-01'), 
+  new Date('2024-01-31')
+)
+```
+
+### With Storage Factory
+
+```tsx
+import { initStorage, indexdb } from 'honolytics/storage'
+
+await initStorage(indexdb())
+
+// Now use with React hooks in storage mode
+<HonolyticsProvider storageMode={true}>
+  <App />
+</HonolyticsProvider>
+```
+
+## Database Schema
+
+The adapter automatically creates the IndexedDB schema:
+
+```ts
+Database: 'honolytics' (version 1)
+├── events (ObjectStore)
+│   ├── keyPath: 'id'
+│   ├── index: 'timestamp' 
+│   └── index: 'sessionId'
+└── sessions (ObjectStore)
+    └── keyPath: 'id'
+```
+
+## API Reference
+
+### Constructor
+
+```ts
+new IndexDBAdapter()
+```
+
+No configuration required. Uses database name `honolytics` with version `1`.
+
+### Connection Management
+
+```ts
+async connect(): Promise<void>
+```
+
+Opens IndexedDB connection, creates schema if needed. Handles version upgrades automatically.
+
+```ts
+async disconnect(): Promise<void>
+```
+
+Closes IndexedDB connection and cleans up resources.
+
+### Data Insertion
+
+```ts
+async insertEvent(event: TEvent): Promise<void>
+```
+
+Inserts or updates event using `put()` operation. Events with same ID are overwritten.
+
+```ts
+async insertSession(session: TSession): Promise<void>
+```
+
+Inserts or updates session using `put()` operation. Sessions with same ID are overwritten.
+
+### Query Methods
+
+#### Time Series Metrics
+
+```ts
+async queryMetrics(start: Date, end: Date): Promise<TMetric[]>
+```
+
+Returns daily aggregated metrics. More efficient than localStorage due to indexing.
+
+#### Event Filtering
+
+```ts
+async queryEvents(filters: TEventFilter): Promise<TEvent[]>
+```
+
+Filter events using indexed queries where possible:
+
+```tsx
+// Optimized: Uses timestamp index
+const events = await adapter.queryEvents({
+  start: new Date('2024-01-01'),
+  end: new Date('2024-01-31')
+})
+
+// Optimized: Uses sessionId index  
+const sessionEvents = await adapter.queryEvents({
+  sessionId: 'session_abc'
+})
+
+// Less optimal: Full table scan
+const userEvents = await adapter.queryEvents({
+  userId: 'user_123'
+})
+```
+
+#### Breakdown Queries
+
+All breakdown queries have the same API as localStorage but with better performance:
+
+```ts
+async queryTopPages(start: Date, end: Date, limit = 10): Promise<TPageStat[]>
+async queryCountries(start: Date, end: Date, limit = 10): Promise<TCountryStat[]>
+async queryBrowsers(start: Date, end: Date, limit = 10): Promise<TBrowserStat[]>
+async queryDevices(start: Date, end: Date, limit = 10): Promise<TDeviceStat[]>
+```
+
+#### Aggregate Queries
+
+```ts
+async queryTotals(start: Date, end: Date): Promise<TTotals>
+async queryFullMetrics(start: Date, end: Date): Promise<TFullMetrics>
+```
+
+## Performance Advantages
+
+### Indexing Benefits
+
+```tsx
+// ✅ Fast: Uses timestamp index
+const recentEvents = await adapter.queryEvents({
+  start: new Date(Date.now() - 24 * 60 * 60 * 1000)
+})
+
+// ✅ Fast: Uses sessionId index
+const sessionEvents = await adapter.queryEvents({
+  sessionId: 'session_123'
+})
+
+// ⚠️ Slower: No index available
+const userEvents = await adapter.queryEvents({
+  userId: 'user_456' // Full table scan
+})
+```
+
+### Memory Efficiency
+
+- **Lazy Loading**: Data fetched only when needed
+- **Streaming**: Can handle large datasets without memory issues
+- **Garbage Collection**: Better memory management than localStorage
+
+### Storage Capacity
+
+- **Large Storage**: ~250MB-1GB+ per origin (browser dependent)
+- **Structured Data**: Binary data support, complex objects
+- **Transactions**: ACID compliance for data integrity
+
+## Browser Compatibility
+
+- **Modern Browsers**: Full support (Chrome, Firefox, Safari, Edge)
+- **IE 10+**: Basic support (older versions)
+- **Mobile Browsers**: Full support on iOS/Android
+- **Private Mode**: Available but data cleared when session ends
+
+## Database Operations
+
+### Error Handling
+
+```tsx
+try {
+  await adapter.connect()
+} catch (error) {
+  if (error.message.includes('IndexedDB not available')) {
+    // Fallback to localStorage adapter
+    console.warn('IndexedDB not supported, using fallback')
+  }
+}
+```
+
+### Connection States
+
+```tsx
+// Check if connected before operations
+if (adapter.db) {
+  await adapter.insertEvent(event)
+} else {
+  throw new Error('Database not connected')
+}
+```
+
+### Schema Upgrades
+
+The adapter handles schema migrations automatically:
+
+```ts
+// Version 1: Initial schema (current)
+onupgradeneeded: (event) => {
+  const db = event.target.result
+  
+  // Create events store with indices
+  const evStore = db.createObjectStore('events', { keyPath: 'id' })
+  evStore.createIndex('timestamp', 'timestamp')
+  evStore.createIndex('sessionId', 'sessionId')
+  
+  // Create sessions store
+  db.createObjectStore('sessions', { keyPath: 'id' })
+}
+
+// Future versions would add migration logic here
+```
+
+## Data Processing
+
+### Async Operations
+
+All operations are properly async and return Promises:
+
+```tsx
+// ✅ Concurrent operations
+const [events, sessions] = await Promise.all([
+  adapter.queryEvents({ start, end }),
+  adapter.getAllSessions()
+])
+
+// ✅ Sequential with proper error handling
+try {
+  await adapter.insertEvent(event)
+  await adapter.insertSession(session)
+} catch (error) {
+  console.error('Failed to insert data:', error)
+}
+```
+
+### Transaction Safety
+
+IndexedDB provides transaction safety for data integrity:
+
+```tsx
+// Each operation runs in its own transaction
+await adapter.insertEvent(event1) // Transaction 1
+await adapter.insertEvent(event2) // Transaction 2
+
+// If event2 fails, event1 is still saved
+```
+
+## Migration from localStorage
+
+### Data Transfer
+
+```tsx
+// Example migration from localStorage to IndexedDB
+const localAdapter = new LocalAdapter()
+const indexdbAdapter = new IndexDBAdapter()
+
+await localAdapter.connect()
+await indexdbAdapter.connect()
+
+// Transfer events
+const events = await localAdapter.queryEvents({})
+for (const event of events) {
+  await indexdbAdapter.insertEvent(event)
+}
+
+// Transfer sessions  
+const sessions = localAdapter.getSessions()
+for (const session of sessions) {
+  await indexdbAdapter.insertSession(session)
+}
+
+// Clean up localStorage
+localStorage.removeItem('honolytics:events')
+localStorage.removeItem('honolytics:sessions')
+```
+
+## Best Practices
+
+### Connection Management
+
+```tsx
+// ✅ Good: Proper cleanup
+class AnalyticsService {
+  private adapter = new IndexDBAdapter()
+  
+  async init() {
+    await this.adapter.connect()
+  }
+  
+  async cleanup() {
+    await this.adapter.disconnect()
+  }
+}
+
+// Use with React
+useEffect(() => {
+  const service = new AnalyticsService()
+  service.init()
+  
+  return () => {
+    service.cleanup() // Cleanup on unmount
+  }
+}, [])
+```
+
+### Error Recovery
+
+```tsx
+// ✅ Good: Graceful degradation
+async function initAnalytics() {
+  try {
+    const adapter = new IndexDBAdapter()
+    await adapter.connect()
+    return adapter
+  } catch (error) {
+    console.warn('IndexedDB failed, falling back to localStorage')
+    const fallback = new LocalAdapter()
+    await fallback.connect()
+    return fallback
+  }
+}
+```
+
+### Query Optimization
+
+```tsx
+// ✅ Good: Use indexed fields for filtering
+const optimizedQuery = await adapter.queryEvents({
+  start: dateRange.start, // Uses timestamp index
+  sessionId: currentSession // Uses sessionId index
+})
+
+// ❌ Avoid: Complex filters that require full scans
+const slowQuery = await adapter.queryEvents({
+  event: 'click', // No index, full table scan
+  meta: { button: 'signup' } // No index support
+})
+```
+
+## Limitations
+
+- **Single Origin**: Data scoped to domain/subdomain
+- **User Controlled**: Users can clear via browser settings
+- **No Cross-Tab Real-Time**: Changes in one tab not immediately visible in others
+- **No Geo-IP**: Country queries return 'Unknown' like localStorage
+
+## Use Cases
+
+Perfect for:
+- **Large Analytics Datasets**: Better performance than localStorage
+- **Offline-First Apps**: Robust offline analytics storage
+- **Progressive Web Apps**: Better storage for PWAs
+- **Complex Queries**: Index-optimized filtering
+
+Advantages over localStorage:
+- **Better Performance**: Indexed queries and lazy loading
+- **Larger Capacity**: 50x-200x more storage space
+- **Data Integrity**: Transaction support and error recovery
+- **Memory Efficient**: Doesn't load all data into memory
+
+Consider PostgreSQL/Turso adapters for:
+- **Server-Side Analytics**: Cross-device tracking
+- **Large Scale**: Millions of events
+- **Advanced Queries**: Complex aggregations and joins
+- **Multi-User**: Shared analytics across users

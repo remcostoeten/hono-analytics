@@ -1,0 +1,311 @@
+---
+title: PostgreSQL Adapter
+description: PostgreSQL database adapter for production analytics ⚠️ Needs Testing
+---
+
+The PostgreSQL adapter stores analytics data in a PostgreSQL database. Implementation is complete but requires testing in production environments.
+
+## Status: ⚠️ Needs Testing
+
+Fully implemented with migrations, cloud provider compatibility, but needs real-world testing.
+
+## Usage
+
+### Basic Setup
+
+```tsx
+import { PostgresAdapter } from 'honolytics/storage'
+
+const adapter = new PostgresAdapter({
+  url: 'postgresql://user:pass@localhost:5432/analytics'
+})
+
+await adapter.connect()
+```
+
+### Cloud Providers
+
+```tsx
+// Neon
+const adapter = new PostgresAdapter({
+  url: 'postgresql://user:pass@ep-cool-darkness-123456.us-east-1.aws.neon.tech/neondb',
+  ssl: 'require'
+})
+
+// Supabase
+const adapter = new PostgresAdapter({
+  url: process.env.SUPABASE_DATABASE_URL,
+  ssl: 'require'
+})
+
+// Railway/Render
+const adapter = new PostgresAdapter({
+  url: process.env.DATABASE_URL,
+  ssl: 'prefer'
+})
+```
+
+## Dependencies
+
+Requires `postgres` package:
+
+```bash
+bun add postgres
+```
+
+## Configuration
+
+```ts
+type TPostgresConfig = {
+  url: string
+  ssl?: boolean | 'require' | 'prefer' | 'allow'
+  max?: number              // Connection pool size
+  database?: string         // Database name override
+  host?: string            // Host override
+  port?: number            // Port override
+  username?: string        // Username override
+  password?: string        // Password override
+}
+```
+
+## Automatic Features
+
+### Schema Migrations
+
+The adapter automatically creates tables and indices:
+
+```sql
+-- Events table with indices
+CREATE TABLE events (
+  id TEXT PRIMARY KEY,
+  timestamp BIGINT NOT NULL,
+  user_id TEXT,
+  session_id TEXT NOT NULL,
+  url TEXT NOT NULL,
+  event TEXT NOT NULL,
+  user_agent TEXT,
+  ip TEXT,
+  referrer TEXT,
+  duration INTEGER,
+  meta JSONB
+);
+
+CREATE INDEX idx_events_timestamp ON events(timestamp);
+CREATE INDEX idx_events_session_id ON events(session_id);
+
+-- Sessions table
+CREATE TABLE sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT,
+  start_time BIGINT NOT NULL,
+  end_time BIGINT,
+  pageviews INTEGER DEFAULT 0,
+  duration INTEGER
+);
+```
+
+### Cloud Compatibility
+
+- **Prepared Statements**: Disabled for better cloud compatibility
+- **SSL Mode**: Configurable SSL requirements
+- **Connection Pooling**: Built-in connection pooling (default: 10 connections)
+- **Timeouts**: Reasonable defaults for cloud providers
+
+## Performance Features
+
+- **Efficient Queries**: Uses SQL aggregations for metrics
+- **Proper Indexing**: Optimized indices for common query patterns
+- **Connection Pooling**: Reuses database connections
+- **Batch Operations**: Supports batch insertions
+
+## Example Queries
+
+### Time Series Metrics
+
+```sql
+SELECT 
+  DATE(to_timestamp(timestamp / 1000)) as date,
+  COUNT(DISTINCT user_id) as users,
+  COUNT(DISTINCT session_id) as sessions,
+  COUNT(CASE WHEN event = 'pageview' THEN 1 END) as pageviews
+FROM events 
+WHERE timestamp >= $1 AND timestamp <= $2
+GROUP BY DATE(to_timestamp(timestamp / 1000))
+ORDER BY date
+```
+
+### Top Pages
+
+```sql
+SELECT 
+  url,
+  COUNT(*) as views,
+  AVG(duration) as avg_duration
+FROM events 
+WHERE timestamp >= $1 AND timestamp <= $2 AND event = 'pageview'
+GROUP BY url
+ORDER BY views DESC
+LIMIT $3
+```
+
+## Data Processing
+
+### User Agent Parsing
+
+Server-side processing with built-in parsers:
+
+```tsx
+// Stored raw in database
+userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)..."
+
+// Parsed during queries
+{ browser: "Chrome", users: 42 }
+{ device: "Desktop", users: 42 }
+```
+
+### Geo-IP Integration
+
+Ready for geo-IP services:
+
+```tsx
+// Currently returns 'Unknown', but structure supports geo lookup
+{ country: "Unknown", users: 42 }
+
+// Can be enhanced with MaxMind, ipapi, etc.
+```
+
+## Best Practices
+
+### Connection Management
+
+```tsx
+// ✅ Good: Single adapter instance
+const analyticsAdapter = new PostgresAdapter({ url: DATABASE_URL })
+await analyticsAdapter.connect()
+
+// Use throughout application lifecycle
+export { analyticsAdapter }
+```
+
+### Error Handling
+
+```tsx
+try {
+  await adapter.connect()
+} catch (error) {
+  if (error.message.includes('postgres.js')) {
+    console.error('Missing dependency: bun add postgres')
+  } else {
+    console.error('Connection failed:', error.message)
+  }
+}
+```
+
+### Environment Variables
+
+```bash
+# Production
+DATABASE_URL=postgresql://user:pass@host:5432/analytics
+ANALYTICS_SSL_MODE=require
+
+# Development
+DATABASE_URL=postgresql://localhost:5432/analytics_dev
+ANALYTICS_SSL_MODE=prefer
+```
+
+## Production Considerations
+
+### Testing Needed
+
+Before production use, test:
+
+1. **Connection Stability**: Long-running connections
+2. **Performance**: Query performance under load
+3. **Migration Safety**: Schema migration in production
+4. **Error Recovery**: Network interruption handling
+5. **Cloud Compatibility**: Specific provider quirks
+
+### Monitoring
+
+```tsx
+// Add application monitoring
+const adapter = new PostgresAdapter({
+  url: DATABASE_URL,
+  ssl: 'require',
+  max: 20, // Adjust based on load
+})
+
+// Monitor connection health
+setInterval(async () => {
+  try {
+    await adapter.client`SELECT 1`
+  } catch (error) {
+    console.error('Health check failed:', error)
+  }
+}, 30000)
+```
+
+### Scaling
+
+- **Vertical Scaling**: Increase database resources
+- **Connection Pooling**: Tune pool size based on load
+- **Read Replicas**: Use read replicas for analytics queries
+- **Partitioning**: Consider table partitioning for large datasets
+
+## Migration
+
+### From Browser Storage
+
+```tsx
+// Export from browser (IndexedDB/localStorage)
+const browserData = await browserAdapter.queryFullMetrics(start, end)
+
+// Import to PostgreSQL
+for (const event of browserData.events) {
+  await pgAdapter.insertEvent(event)
+}
+```
+
+### Between PostgreSQL Instances
+
+```tsx
+// Database-to-database migration
+const source = new PostgresAdapter({ url: SOURCE_URL })
+const target = new PostgresAdapter({ url: TARGET_URL })
+
+const events = await source.queryEvents({ start, end })
+for (const event of events) {
+  await target.insertEvent(event)
+}
+```
+
+## Limitations
+
+- **Single Database**: Not distributed by default
+- **Server-Side Only**: Cannot run in browsers
+- **PostgreSQL Specific**: Requires PostgreSQL (not MySQL, etc.)
+
+## Use Cases
+
+Perfect for:
+- **Production Analytics**: High-performance server-side analytics
+- **Multi-User Applications**: Shared analytics across users
+- **Large Datasets**: Millions of events and sessions
+- **Advanced Queries**: Complex SQL aggregations
+- **Cloud Deployments**: Works with all major cloud providers
+
+## Related Adapters
+
+- **[Turso](./turso)** - Similar SQL features with edge distribution
+- **[SQLite](./sqlite)** - Simpler single-file database (not implemented)
+- **[IndexedDB](./indexdb)** - Client-side alternative for browser storage
+
+## Contributing
+
+To help stabilize this adapter:
+
+1. **Test with Cloud Providers**: Neon, Supabase, Railway, Render
+2. **Performance Testing**: Benchmark queries under load
+3. **Error Scenarios**: Test network failures, timeouts
+4. **Migration Testing**: Test schema migrations
+5. **Documentation**: Report issues and improvements
